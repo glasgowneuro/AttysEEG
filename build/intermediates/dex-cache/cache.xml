@@ -3,6 +3,15 @@
 
     <item
         is-multidex="true"
+        jar="/home/bp1/sandbox/AttysEP/app/build/intermediates/exploded-aar/com.androidplot/androidplot-core/1.4.1/jars/classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="24.0.1"
+        sha1="28bd7a58de18fc64266225d33f6127962e0181ec">
+        <dex dex="/home/bp1/sandbox/AttysEP/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.androidplot-androidplot-core-1.4.1_adec8760fb88b58cccbfd49ecc61f71d833757cf/classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
         jar="/home/bp1/.gradle/caches/modules-2/files-2.1/org.apache.commons/commons-math3/3.6.1/e4ba98f1d4b3c80ec46392f25e094a6a2e58fcbf/commons-math3-3.6.1.jar"
         jumboMode="true"
         optimize="true"
@@ -20,40 +29,13 @@
         <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/pre-dexed/release/com.android.support-support-v4-25.1.0_92c0d943ea49357d83b0d596928faa2e72b97c02.jar" />
     </item>
     <item
-        is-multidex="false"
-        jar="/home/bp1/.gradle/caches/modules-2/files-2.1/org.apache.commons/commons-math3/3.6.1/e4ba98f1d4b3c80ec46392f25e094a6a2e58fcbf/commons-math3-3.6.1.jar"
-        jumboMode="false"
-        optimize="true"
-        revision="24.0.1"
-        sha1="e4ba98f1d4b3c80ec46392f25e094a6a2e58fcbf">
-        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/pre-dexed/release/commons-math3-3.6.1_48cedd3184d3ac50d51b7c6de0da42bc171a5423.jar" />
-    </item>
-    <item
         is-multidex="true"
-        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.android.support/support-v4/25.1.0/jars/classes.jar"
+        jar="/home/bp1/sandbox/AttysEP/app/build/intermediates/exploded-aar/com.android.support/support-fragment/25.1.0/jars/classes.jar"
         jumboMode="true"
         optimize="true"
         revision="24.0.1"
-        sha1="d7c42c80f6509b9ea4db28ca7859ffae08ec5741">
-        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.android.support-support-v4-25.1.0_92c0d943ea49357d83b0d596928faa2e72b97c02/classes.dex" />
-    </item>
-    <item
-        is-multidex="false"
-        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.android.support/support-vector-drawable/25.1.0/jars/classes.jar"
-        jumboMode="false"
-        optimize="true"
-        revision="24.0.1"
-        sha1="e79aa3d9a16f8c9f16377c0608de70a8f31e5d80">
-        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/pre-dexed/release/com.android.support-support-vector-drawable-25.1.0_e07816c3a1888c1f788a337c34cacce1b332935a.jar" />
-    </item>
-    <item
-        is-multidex="false"
-        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.google.android.gms/play-services-base/9.8.0/jars/classes.jar"
-        jumboMode="false"
-        optimize="true"
-        revision="24.0.1"
-        sha1="7e92aadd0697922316d1395c1887a23aebec640a">
-        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/pre-dexed/release/com.google.android.gms-play-services-base-9.8.0_e6ba419c6b88094b4917b7734e3a1e2583c21d7f.jar" />
+        sha1="2a53c4f3518116b8c6aee0e477233f0f7da8616f">
+        <dex dex="/home/bp1/sandbox/AttysEP/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.android.support-support-fragment-25.1.0_dbe618ec74d2ab63661f0e3848c611fbcd1bd1ed/classes.dex" />
     </item>
     <item
         is-multidex="true"
@@ -74,15 +56,6 @@
         <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.android.support-support-vector-drawable-25.1.0_e07816c3a1888c1f788a337c34cacce1b332935a/classes.dex" />
     </item>
     <item
-        is-multidex="false"
-        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.android.support/support-core-ui/25.1.0/jars/classes.jar"
-        jumboMode="false"
-        optimize="true"
-        revision="24.0.1"
-        sha1="aee64634871d88a419d59eb743c1258a60f19700">
-        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/pre-dexed/release/com.android.support-support-core-ui-25.1.0_5ff9e5ddb664d123ee025814d2dbc9b53c48453c.jar" />
-    </item>
-    <item
         is-multidex="true"
         jar="/home/bp1/.m2/repository/uk/me/berndporr/iirj/1.0/iirj-1.0.jar"
         jumboMode="true"
@@ -90,6 +63,15 @@
         revision="24.0.1"
         sha1="11bc770a10bac140e3fa39d5b88705e61b636922">
         <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/transforms/dex/debug/folders/1000/10/iirj-1.0_25b143fe5c171b89d7962936b4752d8d7e21763a/classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="/home/bp1/sandbox/AttysEP/app/build/intermediates/exploded-aar/com.halfhp.fig/figlib/1.0.3/jars/classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="24.0.1"
+        sha1="de8046139933d665ec919c8052042ac1c6020a36">
+        <dex dex="/home/bp1/sandbox/AttysEP/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.halfhp.fig-figlib-1.0.3_501d3ad610e12672fdd209fa4b4ef50135f1b1b2/classes.dex" />
     </item>
     <item
         is-multidex="true"
@@ -101,24 +83,6 @@
         <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.android.support-support-fragment-25.1.0_18bcaf8bed13dc2ae07566accf95e5bd8788a057/classes.dex" />
     </item>
     <item
-        is-multidex="false"
-        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.android.support/support-fragment/25.1.0/jars/classes.jar"
-        jumboMode="false"
-        optimize="true"
-        revision="24.0.1"
-        sha1="2a53c4f3518116b8c6aee0e477233f0f7da8616f">
-        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/pre-dexed/release/com.android.support-support-fragment-25.1.0_18bcaf8bed13dc2ae07566accf95e5bd8788a057.jar" />
-    </item>
-    <item
-        is-multidex="true"
-        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/incremental-classes/debug/instant-run-bootstrap.jar"
-        jumboMode="true"
-        optimize="true"
-        revision="24.0.1"
-        sha1="e8f23d8ce50ef3613e76ee31f985828badd617f0">
-        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/transforms/dex/debug/folders/1000/10/instant-run-bootstrap_bb83b54023c9b23b243829dccb561b9dbc14d4cd/classes.dex" />
-    </item>
-    <item
         is-multidex="true"
         jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.google.android.gms/play-services-base/9.8.0/jars/classes.jar"
         jumboMode="true"
@@ -126,33 +90,6 @@
         revision="24.0.1"
         sha1="7e92aadd0697922316d1395c1887a23aebec640a">
         <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.google.android.gms-play-services-base-9.8.0_e6ba419c6b88094b4917b7734e3a1e2583c21d7f/classes.dex" />
-    </item>
-    <item
-        is-multidex="false"
-        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.android.support/appcompat-v7/25.1.0/jars/classes.jar"
-        jumboMode="false"
-        optimize="true"
-        revision="24.0.1"
-        sha1="1630658fbc2d222b988603c27b4a4249586fbfe7">
-        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/pre-dexed/release/com.android.support-appcompat-v7-25.1.0_cf271364963c6039aed3b78349572e05890ec8bc.jar" />
-    </item>
-    <item
-        is-multidex="false"
-        jar="/home/bp1/.m2/repository/uk/me/berndporr/iirj/1.0/iirj-1.0.jar"
-        jumboMode="false"
-        optimize="true"
-        revision="24.0.1"
-        sha1="11bc770a10bac140e3fa39d5b88705e61b636922">
-        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/pre-dexed/release/iirj-1.0_25b143fe5c171b89d7962936b4752d8d7e21763a.jar" />
-    </item>
-    <item
-        is-multidex="true"
-        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.android.support/support-compat/25.1.0/jars/classes.jar"
-        jumboMode="true"
-        optimize="true"
-        revision="24.0.1"
-        sha1="ca3c7aa31e2726a400a6e552b93cb9f63c9a1e6d">
-        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.android.support-support-compat-25.1.0_2e39c8f64743ccea7c422d64524e4def5c330a76/classes.dex" />
     </item>
     <item
         is-multidex="true"
@@ -174,21 +111,21 @@
     </item>
     <item
         is-multidex="false"
-        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.google.android.gms/play-services-appindexing/9.8.0/jars/classes.jar"
-        jumboMode="false"
-        optimize="true"
-        revision="24.0.1"
-        sha1="e3234cd25e23069abd48ecd2117bc0e8011bf45a">
-        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/pre-dexed/release/com.google.android.gms-play-services-appindexing-9.8.0_31cc6c34889eb348e247ee4bdc9613f4e5784d73.jar" />
-    </item>
-    <item
-        is-multidex="false"
         jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.android.support/support-compat/25.1.0/jars/classes.jar"
         jumboMode="false"
         optimize="true"
         revision="24.0.1"
         sha1="ca3c7aa31e2726a400a6e552b93cb9f63c9a1e6d">
         <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/pre-dexed/release/com.android.support-support-compat-25.1.0_2e39c8f64743ccea7c422d64524e4def5c330a76.jar" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="/home/bp1/sandbox/AttysEP/app/build/intermediates/exploded-aar/com.android.support/percent/25.1.0/jars/classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="24.0.1"
+        sha1="01acd167d64a3835490f0d058c9e9052a514797c">
+        <dex dex="/home/bp1/sandbox/AttysEP/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.android.support-percent-25.1.0_b5555a6c91995003b6a92ac35c32a4292026d8fd/classes.dex" />
     </item>
     <item
         is-multidex="true"
@@ -245,6 +182,240 @@
         <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.android.support-percent-25.1.0_15b5d3e94556303829dca8643f292bd887c15eda/classes.dex" />
     </item>
     <item
+        is-multidex="true"
+        jar="/home/bp1/sandbox/AttysEP/app/build/intermediates/exploded-aar/com.android.support/support-vector-drawable/25.1.0/jars/classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="24.0.1"
+        sha1="e79aa3d9a16f8c9f16377c0608de70a8f31e5d80">
+        <dex dex="/home/bp1/sandbox/AttysEP/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.android.support-support-vector-drawable-25.1.0_2e8e698b3f6f55bff24c177eb91a773b68b47b23/classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.google.android.gms/play-services-basement/9.8.0/jars/classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="24.0.1"
+        sha1="9f6d236bac26d02b410e4ee186ba517ace5ee661">
+        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.google.android.gms-play-services-basement-9.8.0_1819cfa04bb5f038a420a768f44cb65fb4433563/classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="/home/bp1/sandbox/AttysEP/app/build/intermediates/exploded-aar/com.google.android.gms/play-services-tasks/9.8.0/jars/classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="24.0.1"
+        sha1="bf2e1838e4428616c1aa26edf43de72b5b99bf84">
+        <dex dex="/home/bp1/sandbox/AttysEP/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.google.android.gms-play-services-tasks-9.8.0_9fb194bac3071f8739f8e2465da44d22c3a902b2/classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="/home/bp1/sandbox/AttysEP/app/build/intermediates/exploded-aar/com.android.support/support-core-ui/25.1.0/jars/classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="24.0.1"
+        sha1="aee64634871d88a419d59eb743c1258a60f19700">
+        <dex dex="/home/bp1/sandbox/AttysEP/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.android.support-support-core-ui-25.1.0_d70673723239229dccf4bb87684b8bae9db31f5b/classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="/home/bp1/sandbox/AttysEP/app/build/intermediates/exploded-aar/com.google.android.gms/play-services-basement/9.8.0/jars/classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="24.0.1"
+        sha1="9f6d236bac26d02b410e4ee186ba517ace5ee661">
+        <dex dex="/home/bp1/sandbox/AttysEP/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.google.android.gms-play-services-basement-9.8.0_b7c41ab53e585bd94526f669cfea92f979b9f6d7/classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.android.support/support-media-compat/25.1.0/jars/classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="24.0.1"
+        sha1="f02263e35e52668dd17b73bf961437e3d562b35f">
+        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.android.support-support-media-compat-25.1.0_c6b1272444cc862ec7872db25d2ee1dc1cc5dc01/classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="/home/bp1/sandbox/AttysEP/app/build/intermediates/incremental-classes/debug/instant-run-bootstrap.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="24.0.1"
+        sha1="fbcf300afb9b19d6f17b9fd3b487b066b6cb4137">
+        <dex dex="/home/bp1/sandbox/AttysEP/app/build/intermediates/transforms/dex/debug/folders/1000/10/instant-run-bootstrap_28256f57d9e3c727adeacc6be324974f9e2c184d/classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.android.support/animated-vector-drawable/25.1.0/jars/classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="24.0.1"
+        sha1="6fb6ac3e8d3b9013819920d9ea11f3803c4c0033">
+        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.android.support-animated-vector-drawable-25.1.0_27f16df0b61c984c3e25d18fed84fac28ddc29a3/classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="/home/bp1/sandbox/AttysEP/app/build/intermediates/exploded-aar/com.android.support/support-core-utils/25.1.0/jars/classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="24.0.1"
+        sha1="0a0ef86b7fa568a52bf6214a0326ca1f1d618da7">
+        <dex dex="/home/bp1/sandbox/AttysEP/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.android.support-support-core-utils-25.1.0_1b9584d037617dc251aabd6725abbc8affc05cf5/classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="/home/bp1/Android/Sdk/extras/android/m2repository/com/android/support/support-annotations/25.1.0/support-annotations-25.1.0.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="24.0.1"
+        sha1="64cb6b229a8bdfd907bc8dd46839a0053e4c018d">
+        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/transforms/dex/debug/folders/1000/10/support-annotations-25.1.0_fe0601c441c993458a5582b40e7cff65fd3afc3b/classes.dex" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.google.firebase/firebase-common/9.8.0/jars/classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="24.0.1"
+        sha1="c61641e333fa88da21758bab8cc28ee16604b05f">
+        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/pre-dexed/release/com.google.firebase-firebase-common-9.8.0_f43a40c44a9bae510570a075cb12d54a9c871adc.jar" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.google.android.gms/play-services-tasks/9.8.0/jars/classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="24.0.1"
+        sha1="bf2e1838e4428616c1aa26edf43de72b5b99bf84">
+        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.google.android.gms-play-services-tasks-9.8.0_ebc196a7d46475e785f0bed8cc941bada2fa7676/classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="/home/bp1/sandbox/AttysEP/app/build/intermediates/exploded-aar/com.google.android.gms/play-services-appindexing/9.8.0/jars/classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="24.0.1"
+        sha1="e3234cd25e23069abd48ecd2117bc0e8011bf45a">
+        <dex dex="/home/bp1/sandbox/AttysEP/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.google.android.gms-play-services-appindexing-9.8.0_cedaa4200bd02cdf5d0db94d8570a29a0f2f9f42/classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="/home/bp1/sandbox/AttysEP/app/build/intermediates/exploded-aar/com.android.support/support-media-compat/25.1.0/jars/classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="24.0.1"
+        sha1="f02263e35e52668dd17b73bf961437e3d562b35f">
+        <dex dex="/home/bp1/sandbox/AttysEP/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.android.support-support-media-compat-25.1.0_9d9fb3584c40c4561dbfed7a2bf3f6012a2d4a1c/classes.dex" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/home/bp1/.gradle/caches/modules-2/files-2.1/org.apache.commons/commons-math3/3.6.1/e4ba98f1d4b3c80ec46392f25e094a6a2e58fcbf/commons-math3-3.6.1.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="24.0.1"
+        sha1="e4ba98f1d4b3c80ec46392f25e094a6a2e58fcbf">
+        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/pre-dexed/release/commons-math3-3.6.1_48cedd3184d3ac50d51b7c6de0da42bc171a5423.jar" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.android.support/support-v4/25.1.0/jars/classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="24.0.1"
+        sha1="d7c42c80f6509b9ea4db28ca7859ffae08ec5741">
+        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.android.support-support-v4-25.1.0_92c0d943ea49357d83b0d596928faa2e72b97c02/classes.dex" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.android.support/support-vector-drawable/25.1.0/jars/classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="24.0.1"
+        sha1="e79aa3d9a16f8c9f16377c0608de70a8f31e5d80">
+        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/pre-dexed/release/com.android.support-support-vector-drawable-25.1.0_e07816c3a1888c1f788a337c34cacce1b332935a.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.google.android.gms/play-services-base/9.8.0/jars/classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="24.0.1"
+        sha1="7e92aadd0697922316d1395c1887a23aebec640a">
+        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/pre-dexed/release/com.google.android.gms-play-services-base-9.8.0_e6ba419c6b88094b4917b7734e3a1e2583c21d7f.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.android.support/support-core-ui/25.1.0/jars/classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="24.0.1"
+        sha1="aee64634871d88a419d59eb743c1258a60f19700">
+        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/pre-dexed/release/com.android.support-support-core-ui-25.1.0_5ff9e5ddb664d123ee025814d2dbc9b53c48453c.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.android.support/support-fragment/25.1.0/jars/classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="24.0.1"
+        sha1="2a53c4f3518116b8c6aee0e477233f0f7da8616f">
+        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/pre-dexed/release/com.android.support-support-fragment-25.1.0_18bcaf8bed13dc2ae07566accf95e5bd8788a057.jar" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/incremental-classes/debug/instant-run-bootstrap.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="24.0.1"
+        sha1="e8f23d8ce50ef3613e76ee31f985828badd617f0">
+        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/transforms/dex/debug/folders/1000/10/instant-run-bootstrap_bb83b54023c9b23b243829dccb561b9dbc14d4cd/classes.dex" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.android.support/appcompat-v7/25.1.0/jars/classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="24.0.1"
+        sha1="1630658fbc2d222b988603c27b4a4249586fbfe7">
+        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/pre-dexed/release/com.android.support-appcompat-v7-25.1.0_cf271364963c6039aed3b78349572e05890ec8bc.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/home/bp1/.m2/repository/uk/me/berndporr/iirj/1.0/iirj-1.0.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="24.0.1"
+        sha1="11bc770a10bac140e3fa39d5b88705e61b636922">
+        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/pre-dexed/release/iirj-1.0_25b143fe5c171b89d7962936b4752d8d7e21763a.jar" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.android.support/support-compat/25.1.0/jars/classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="24.0.1"
+        sha1="ca3c7aa31e2726a400a6e552b93cb9f63c9a1e6d">
+        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.android.support-support-compat-25.1.0_2e39c8f64743ccea7c422d64524e4def5c330a76/classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="/home/bp1/sandbox/AttysEP/app/build/intermediates/exploded-aar/com.android.support/support-compat/25.1.0/jars/classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="24.0.1"
+        sha1="ca3c7aa31e2726a400a6e552b93cb9f63c9a1e6d">
+        <dex dex="/home/bp1/sandbox/AttysEP/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.android.support-support-compat-25.1.0_363bd637353e32ef3ebcd77d0825607a527c9db5/classes.dex" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.google.android.gms/play-services-appindexing/9.8.0/jars/classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="24.0.1"
+        sha1="e3234cd25e23069abd48ecd2117bc0e8011bf45a">
+        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/pre-dexed/release/com.google.android.gms-play-services-appindexing-9.8.0_31cc6c34889eb348e247ee4bdc9613f4e5784d73.jar" />
+    </item>
+    <item
         is-multidex="false"
         jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.android.support/percent/25.1.0/jars/classes.jar"
         jumboMode="false"
@@ -264,12 +435,30 @@
     </item>
     <item
         is-multidex="true"
-        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.google.android.gms/play-services-basement/9.8.0/jars/classes.jar"
+        jar="/home/bp1/sandbox/AttysEP/app/build/intermediates/exploded-aar/com.android.support/support-v4/25.1.0/jars/classes.jar"
         jumboMode="true"
         optimize="true"
         revision="24.0.1"
-        sha1="9f6d236bac26d02b410e4ee186ba517ace5ee661">
-        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.google.android.gms-play-services-basement-9.8.0_1819cfa04bb5f038a420a768f44cb65fb4433563/classes.dex" />
+        sha1="d7c42c80f6509b9ea4db28ca7859ffae08ec5741">
+        <dex dex="/home/bp1/sandbox/AttysEP/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.android.support-support-v4-25.1.0_01910af9487aaab17ed4f37887a9507d002836bb/classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="/home/bp1/sandbox/AttysEP/app/build/intermediates/exploded-aar/com.android.support/animated-vector-drawable/25.1.0/jars/classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="24.0.1"
+        sha1="6fb6ac3e8d3b9013819920d9ea11f3803c4c0033">
+        <dex dex="/home/bp1/sandbox/AttysEP/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.android.support-animated-vector-drawable-25.1.0_c3fa66c656c06824e423a2dbc2827b63fbb5c246/classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="/home/bp1/sandbox/AttysEP/app/build/intermediates/exploded-aar/com.google.android.gms/play-services-base/9.8.0/jars/classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="24.0.1"
+        sha1="7e92aadd0697922316d1395c1887a23aebec640a">
+        <dex dex="/home/bp1/sandbox/AttysEP/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.google.android.gms-play-services-base-9.8.0_19b94dcb0bc362c599576073d14c675135a23165/classes.dex" />
     </item>
     <item
         is-multidex="false"
@@ -300,12 +489,12 @@
     </item>
     <item
         is-multidex="true"
-        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.android.support/support-media-compat/25.1.0/jars/classes.jar"
+        jar="/home/bp1/sandbox/AttysEP/app/build/intermediates/exploded-aar/com.google.firebase/firebase-common/9.8.0/jars/classes.jar"
         jumboMode="true"
         optimize="true"
         revision="24.0.1"
-        sha1="f02263e35e52668dd17b73bf961437e3d562b35f">
-        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.android.support-support-media-compat-25.1.0_c6b1272444cc862ec7872db25d2ee1dc1cc5dc01/classes.dex" />
+        sha1="c61641e333fa88da21758bab8cc28ee16604b05f">
+        <dex dex="/home/bp1/sandbox/AttysEP/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.google.firebase-firebase-common-9.8.0_521200b7318f889aca369a7b338d4042c36059c4/classes.dex" />
     </item>
     <item
         is-multidex="false"
@@ -318,12 +507,12 @@
     </item>
     <item
         is-multidex="true"
-        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.android.support/animated-vector-drawable/25.1.0/jars/classes.jar"
+        jar="/home/bp1/sandbox/AttysEP/app/build/intermediates/incremental-runtime-classes/debug/instant-run.jar"
         jumboMode="true"
         optimize="true"
         revision="24.0.1"
-        sha1="6fb6ac3e8d3b9013819920d9ea11f3803c4c0033">
-        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.android.support-animated-vector-drawable-25.1.0_27f16df0b61c984c3e25d18fed84fac28ddc29a3/classes.dex" />
+        sha1="5bdc2fcc53dca6c1b3dc53438a621b5f31b613fb">
+        <dex dex="/home/bp1/sandbox/AttysEP/app/build/intermediates/transforms/dex/debug/folders/1000/10/instant-run_0480c2b83c980c16953dda9e277d50a387d17812/classes.dex" />
     </item>
     <item
         is-multidex="false"
@@ -336,24 +525,6 @@
     </item>
     <item
         is-multidex="false"
-        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.google.firebase/firebase-common/9.8.0/jars/classes.jar"
-        jumboMode="false"
-        optimize="true"
-        revision="24.0.1"
-        sha1="c61641e333fa88da21758bab8cc28ee16604b05f">
-        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/pre-dexed/release/com.google.firebase-firebase-common-9.8.0_f43a40c44a9bae510570a075cb12d54a9c871adc.jar" />
-    </item>
-    <item
-        is-multidex="true"
-        jar="/home/bp1/Android/Sdk/extras/android/m2repository/com/android/support/support-annotations/25.1.0/support-annotations-25.1.0.jar"
-        jumboMode="true"
-        optimize="true"
-        revision="24.0.1"
-        sha1="64cb6b229a8bdfd907bc8dd46839a0053e4c018d">
-        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/transforms/dex/debug/folders/1000/10/support-annotations-25.1.0_fe0601c441c993458a5582b40e7cff65fd3afc3b/classes.dex" />
-    </item>
-    <item
-        is-multidex="false"
         jar="/home/bp1/Android/Sdk/extras/android/m2repository/com/android/support/support-annotations/25.1.0/support-annotations-25.1.0.jar"
         jumboMode="false"
         optimize="true"
@@ -363,21 +534,21 @@
     </item>
     <item
         is-multidex="true"
-        jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.google.android.gms/play-services-tasks/9.8.0/jars/classes.jar"
-        jumboMode="true"
-        optimize="true"
-        revision="24.0.1"
-        sha1="bf2e1838e4428616c1aa26edf43de72b5b99bf84">
-        <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.google.android.gms-play-services-tasks-9.8.0_ebc196a7d46475e785f0bed8cc941bada2fa7676/classes.dex" />
-    </item>
-    <item
-        is-multidex="true"
         jar="/home/bp1/sandbox/AttysECG/app/build/intermediates/exploded-aar/com.google.firebase/firebase-common/9.8.0/jars/classes.jar"
         jumboMode="true"
         optimize="true"
         revision="24.0.1"
         sha1="c61641e333fa88da21758bab8cc28ee16604b05f">
         <dex dex="/home/bp1/sandbox/AttysECG/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.google.firebase-firebase-common-9.8.0_f43a40c44a9bae510570a075cb12d54a9c871adc/classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="/home/bp1/sandbox/AttysEP/app/build/intermediates/exploded-aar/com.android.support/appcompat-v7/25.1.0/jars/classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="24.0.1"
+        sha1="1630658fbc2d222b988603c27b4a4249586fbfe7">
+        <dex dex="/home/bp1/sandbox/AttysEP/app/build/intermediates/transforms/dex/debug/folders/1000/10/com.android.support-appcompat-v7-25.1.0_e5fa34a4e9282a2fa17e152631b0ad1a095732a2/classes.dex" />
     </item>
 
 </items>
