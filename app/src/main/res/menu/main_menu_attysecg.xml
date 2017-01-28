@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/toggleRec"
+        android:icon="@drawable/ic_action_rec"
+        android:title="rec"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:title="ECG"
+        app:showAsAction="ifRoom|withText">
+
+        <menu>
+
+            <item android:title="ECG analysis">
+                <menu>
+                    <item
+                        android:id="@+id/plotWindowOff"
+                        android:title="off" />
+                    <item
+                        android:id="@+id/plotWindowBPM"
+                        android:title="Heart rate" />
+                    <item
+                        android:id="@+id/plotWindowVector"
+                        android:title="Vector ECG" />
+                </menu>
+            </item>
+
+            <group android:checkableBehavior="all">
+                <item
+                    android:id="@+id/showEinthoven"
+                    android:checked="true"
+                    android:title="Show Einthoven" />
+                <item
+                    android:id="@+id/showAugmented"
+                    android:checked="true"
+                    android:title="Show Augmented leads" />
+                <item
+                    android:id="@+id/notch"
+                    android:checked="false"
+                    android:title="Enable mains filter" />
+            </group>
+
+            <item
+                android:checked="true"
+                android:title="gain">
+
+                <menu>
+                    <item
+                        android:id="@+id/Ch1gain200"
+                        android:title="low" />
+                    <item
+                        android:id="@+id/Ch1gain500"
+                        android:title="standard" />
+                    <item
+                        android:id="@+id/Ch1gain1000"
+                        android:title="high" />
+                </menu>
+
+            </item>
+        </menu>
+    </item>
+
+    <item
+        android:id="@+id/preferences"
+        android:title="Preferences"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/enterFilename"
+        android:title="Enter Filename" />
+
+    <item
+        android:id="@+id/filebrowser"
+        android:title="File Browser"
+        app:showAsAction="never" />
+
+</menu>
+

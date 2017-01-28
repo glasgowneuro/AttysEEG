@@ -1,0 +1,49 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 25
+    buildToolsVersion "24.0.1"
+
+    defaultConfig {
+        applicationId "tech.glasgowneuro.attysecg"
+        minSdkVersion 16
+        targetSdkVersion 25
+        versionCode 3
+        versionName "1.0.2"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    sourceSets {
+        main {
+            res.srcDirs = ['src/main/res', 'src/main/res/menu']
+            String attyscomm = '../../AttysComm/app/src/main/'
+            java {
+                srcDir attyscomm + '/java'
+            }
+        }
+    }
+}
+
+dependencies {
+
+    repositories {
+        mavenLocal()
+    }
+
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    testCompile 'junit:junit:4.12'
+    compile 'com.android.support:appcompat-v7:25.1.0'
+    compile group: 'uk.me.berndporr', name:'iirj', version: '1.0'
+    compile group: 'org.apache.commons', name: 'commons-math3', version: '3.6.1'
+    compile "com.androidplot:androidplot-core:1.4.1"
+    compile 'com.android.support:percent:25.1.0'
+}
+
+dependencies {
+    compile 'com.google.android.gms:play-services-appindexing:9.8.0'
+}
