@@ -9,20 +9,30 @@
         xmlns:ap="http://schemas.android.com/apk/res-auto"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        app:layout_heightPercent="95%"
-        app:layout_widthPercent="95%"
         android:layout_gravity="center"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        app:layout_heightPercent="95%"
+        app:layout_widthPercent="95%">
 
-        <TextView
-            android:layout_gravity="center_vertical"
-            android:id="@+id/bpmTextView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="end"
-            android:text=""
-            android:textColor="#00FFFF"
-            android:textSize="36sp" />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <ToggleButton
+                android:id="@+id/doSweeps"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:id="@+id/bpmTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:gravity="end"
+                android:text=""
+                android:textColor="#00FFFF"
+                android:textSize="12sp" />
+        </LinearLayout>
 
         <com.androidplot.xy.XYPlot
             android:id="@+id/bpmPlotView"
@@ -33,7 +43,7 @@
             ap:lineLabelRotationBottom="-45"
             ap:lineLabels="left|bottom"
             ap:rangeTitle="range"
-            ap:title="Heart rate (BPM)" />
+            ap:title="AEP/uV" />
 
     </LinearLayout>
 

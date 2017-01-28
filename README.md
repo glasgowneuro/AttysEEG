@@ -1,1 +1,4 @@
-# AttysECG
+# AttysEP
+
+Evoked potential app
+

@@ -75,7 +75,7 @@ public class AttysEP extends AppCompatActivity {
 
     private RealtimePlotView realtimePlotView = null;
     private InfoView infoView = null;
-    private AEPFragment heartratePlotFragment = null;
+    private AEPFragment aepPlotFragment = null;
 
     private BluetoothAdapter BA;
     private AttysComm attysComm = null;
@@ -87,21 +87,13 @@ public class AttysEP extends AppCompatActivity {
     private static final String TAG = "AttysEP";
 
     private Highpass highpass_II = null;
-    private Highpass highpass_III = null;
-    private float gain = 500;
+    private float gain = 2000;
     private Butterworth iirNotch_II = null;
-    private Butterworth iirNotch_III = null;
     private double notchBW = 2.5; // Hz
     private int notchOrder = 2;
     private float powerlineHz = 50;
 
-    private boolean showEinthoven = true;
-    private boolean showAugmented = true;
-    private float filtBPM = 0;
-
     private float ytick = 0;
-
-    private int[] actualChannelIdx;
 
     int ygapForInfo = 0;
 
@@ -109,10 +101,6 @@ public class AttysEP extends AppCompatActivity {
     //double ecgDetOut;
 
     private int timestamp = 0;
-
-    String[] labels = {
-            "I", "II", "III",
-            "aVR", "aVL", "aVF"};
 
     private String dataFilename = null;
     private byte dataSeparator = 0;
@@ -186,8 +174,7 @@ public class AttysEP extends AppCompatActivity {
             bpm = _bpm;
         }
 
-        private void saveData(float I, float II, float III,
-                              float aVR, float aVL, float aVF) {
+        private void saveData(float data) {
 
             if (textdataFileStream == null) return;
 
@@ -205,15 +192,7 @@ public class AttysEP extends AppCompatActivity {
             }
             float t = timestamp + samplingInterval;
             String tmp = String.format("%f%c", t, s);
-            tmp = tmp + String.format("%f%c", I, s);
-            tmp = tmp + String.format("%f%c", II, s);
-            tmp = tmp + String.format("%f%c", III, s);
-            tmp = tmp + String.format("%f%c", aVR, s);
-            tmp = tmp + String.format("%f%c", aVL, s);
-            tmp = tmp + String.format("%f%c", aVF, s);
-            tmp = tmp + String.format("%f", bpm);
-            bpm = 0;
-
+            tmp = tmp + String.format("%f%c", data, s);
             if (textdataFileStream != null) {
                 textdataFileStream.format("%s\n", tmp);
             }
@@ -362,58 +341,13 @@ public class AttysEP extends AppCompatActivity {
 
         private void annotatePlot() {
             String small = "";
-            small = small + "".format("1 sec/div, %1.01f mV/div, HR = %d BPM", ytick * 1000, ((int) filtBPM));
+            small = small + "".format("1 sec/div, %1.01f mV/div", ytick * 1000);
             if (dataRecorder.isRecording()) {
                 small = small + " !!RECORDING to:" + dataFilename;
             }
             if (infoView != null) {
                 if (attysComm != null) {
                     infoView.drawText(small);
-                }
-            }
-        }
-
-        private void doAnalysis(float v) {
-
-            v = v * scaling_factor;
-
-            double h = ecgDetNotch.filter(v * 1000);
-            h = ecgDetector.filter(h);
-            if (ignoreECGdetector > 0) {
-                ignoreECGdetector--;
-                h = 0;
-            }
-            h = h * h;
-            // debugging
-            //ecgDetOut = h;
-            if (h > max) {
-                max = h;
-            }
-            max = max - 0.1 * max / attysComm.getSamplingRateInHz();
-            //Log.d(TAG,"h="+h+",max="+max);
-            if (doNotDetect > 0) {
-                doNotDetect--;
-            } else {
-                if (h > (0.6 * max)) {
-                    float t = (timestamp - t2) / attysComm.getSamplingRateInHz();
-                    float bpm = 1 / t * 60;
-                    if ((bpm > 30) && (bpm < 300)) {
-                        hrBuffer[2] = hrBuffer[1];
-                        hrBuffer[1] = hrBuffer[0];
-                        hrBuffer[0] = bpm;
-                        System.arraycopy(hrBuffer, 0, sortBuffer, 0, hrBuffer.length);
-                        Arrays.sort(sortBuffer);
-                        filtBPM = sortBuffer[1];
-                        if (filtBPM > 0) {
-                            dataRecorder.setBPM(filtBPM);
-                            if (heartratePlotFragment != null) {
-                                heartratePlotFragment.addValue(filtBPM);
-                            }
-                        }
-                    }
-                    t2 = timestamp;
-                    // advoid 1/4 sec
-                    doNotDetect = attysComm.getSamplingRateInHz() / 4;
                 }
             }
         }
@@ -465,80 +399,18 @@ public class AttysEP extends AppCompatActivity {
                             if (iirNotch_II != null) {
                                 II = (float) iirNotch_II.filter((double) II);
                             }
-                            doAnalysis(II);
 
-                            float III = sample[AttysComm.INDEX_Analogue_channel_2];
-                            III = highpass_III.filter(III);
-                            if (iirNotch_III != null) {
-                                III = (float) iirNotch_III.filter((double) III);
+                            dataRecorder.saveData(II);
+                            if (aepPlotFragment != null) {
+                                aepPlotFragment.addValue(II);
                             }
-
-                            // https://pdfs.semanticscholar.org/8160/8b62b6efb007d112b438655dd2c897759fb1.pdf
-                            // Corrected Formula for the Calculation of the Electrical Heart Axis
-                            // Dragutin Novosel, Georg Noll1, Thomas F. Lüscher1
-
-                            // I-II+III = 0
-                            float I = II - III;
-
-                            float aVR = III / 2 - II;
-                            float aVL = II / 2 - III;
-                            float aVF = II / 2 + III / 2;
-
-                            dataRecorder.saveData(I, II, III, aVR, aVL, aVF);
 
                             int nRealChN = 0;
-                            if (showEinthoven) {
-                                if (attysComm != null) {
-                                    tmpMin[nRealChN] = -max;
-                                    tmpMax[nRealChN] = max;
-                                    tmpTick[nRealChN] = ytick;
-                                    tmpLabels[nRealChN] = labels[0];
-                                    actualChannelIdx[nRealChN] = 0;
-                                    tmpSample[nRealChN++] = I;
-                                }
-                                if (attysComm != null) {
-                                    tmpMin[nRealChN] = -max;
-                                    tmpMax[nRealChN] = max;
-                                    tmpTick[nRealChN] = ytick;
-                                    tmpLabels[nRealChN] = labels[1];
-                                    actualChannelIdx[nRealChN] = 1;
-                                    tmpSample[nRealChN++] = II;
-                                }
-                                if (attysComm != null) {
-                                    tmpMin[nRealChN] = -max;
-                                    tmpMax[nRealChN] = max;
-                                    tmpTick[nRealChN] = ytick;
-                                    tmpLabels[nRealChN] = labels[2];
-                                    actualChannelIdx[nRealChN] = 2;
-                                    tmpSample[nRealChN++] = III;
-                                }
-                            }
-                            if (showAugmented) {
-                                if (attysComm != null) {
-                                    tmpMin[nRealChN] = -max;
-                                    tmpMax[nRealChN] = max;
-                                    tmpTick[nRealChN] = ytick;
-                                    tmpLabels[nRealChN] = labels[3];
-                                    actualChannelIdx[nRealChN] = 3;
-                                    tmpSample[nRealChN++] = aVR;
-                                }
-                                if (attysComm != null) {
-                                    tmpMin[nRealChN] = -max;
-                                    tmpMax[nRealChN] = max;
-                                    tmpTick[nRealChN] = ytick;
-                                    tmpLabels[nRealChN] = labels[4];
-                                    actualChannelIdx[nRealChN] = 4;
-                                    tmpSample[nRealChN++] = aVL;
-                                }
-                                if (attysComm != null) {
-                                    tmpMin[nRealChN] = -max;
-                                    tmpMax[nRealChN] = max;
-                                    tmpTick[nRealChN] = ytick;
-                                    tmpLabels[nRealChN] = labels[5];
-                                    actualChannelIdx[nRealChN] = 5;
-                                    tmpSample[nRealChN++] = aVF;
-                                }
-                            }
+                            tmpMin[nRealChN] = -max;
+                            tmpMax[nRealChN] = max;
+                            tmpTick[nRealChN] = ytick;
+                            tmpLabels[nRealChN] = "Ch1";
+                            tmpSample[nRealChN++] = II;
                             if (infoView != null) {
                                 if (ygapForInfo == 0) {
                                     ygapForInfo = infoView.getInfoHeight();
@@ -560,6 +432,9 @@ public class AttysEP extends AppCompatActivity {
                     }
                     if (realtimePlotView != null) {
                         realtimePlotView.stopAddSamples();
+                    }
+                    if (aepPlotFragment != null) {
+                        aepPlotFragment.redraw();
                     }
                 }
             }
@@ -603,16 +478,9 @@ public class AttysEP extends AppCompatActivity {
         Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
 
-        int nChannels = AttysComm.NCHANNELS;
         iirNotch_II = new Butterworth();
-        iirNotch_III = new Butterworth();
-        actualChannelIdx = new int[nChannels];
         highpass_II = new Highpass();
-        highpass_III = new Highpass();
-        iirNotch_II = null;
-        iirNotch_III = null;
-        actualChannelIdx[0] = AttysComm.INDEX_Analogue_channel_1;
-        gain = 500;
+        gain = 2000;
 
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
@@ -663,7 +531,8 @@ public class AttysEP extends AppCompatActivity {
         getsetAttysPrefs();
 
         highpass_II.setAlpha(1.0F / attysComm.getSamplingRateInHz());
-        highpass_III.setAlpha(1.0F / attysComm.getSamplingRateInHz());
+        iirNotch_II.bandStop(notchOrder,
+                attysComm.getSamplingRateInHz(), powerlineHz, notchBW);
 
         realtimePlotView = (RealtimePlotView) findViewById(R.id.realtimeplotview);
         realtimePlotView.setMaxChannels(15);
@@ -964,60 +833,36 @@ public class AttysEP extends AppCompatActivity {
                 }
                 return true;
 
-            case R.id.showEinthoven:
-                showEinthoven = !showEinthoven;
-                item.setChecked(showEinthoven);
-                return true;
-
-            case R.id.showAugmented:
-                showAugmented = !showAugmented;
-                item.setChecked(showAugmented);
-                return true;
-
             case R.id.Ch1gain200:
-                gain = 200;
+                gain = 1000;
                 return true;
 
             case R.id.Ch1gain500:
-                gain = 500;
+                gain = 2000;
                 return true;
 
             case R.id.Ch1gain1000:
-                gain = 1000;
+                gain = 4000;
                 return true;
 
             case R.id.enterFilename:
                 enterFilename();
                 return true;
 
-            case R.id.notch:
-                if (iirNotch_II == null) {
-                    iirNotch_II = new Butterworth();
-                    iirNotch_III = new Butterworth();
-                    iirNotch_II.bandStop(notchOrder,
-                            attysComm.getSamplingRateInHz(), powerlineHz, notchBW);
-                    iirNotch_III.bandStop(notchOrder,
-                            attysComm.getSamplingRateInHz(), powerlineHz, notchBW);
-                } else {
-                    iirNotch_II = null;
-                    iirNotch_III = null;
-                }
-                item.setChecked(iirNotch_II != null);
-                return true;
-
-            case R.id.plotWindowBPM:
+            case R.id.plotWindowAEP:
 
                 deletePlotWindow();
                 // Create a new Fragment to be placed in the activity layout
-                heartratePlotFragment = new AEPFragment();
+                aepPlotFragment = new AEPFragment();
+                aepPlotFragment.setSamplingrate(attysComm.getSamplingRateInHz());
                 // Add the fragment to the 'fragment_container' FrameLayout
                 if (Log.isLoggable(TAG, Log.DEBUG)) {
                     Log.d(TAG, "Adding heartrate fragment");
                 }
                 getSupportFragmentManager().beginTransaction()
                         .add(R.id.fragment_plot_container,
-                                heartratePlotFragment,
-                                "heartratePlotFragment")
+                                aepPlotFragment,
+                                "aepPlotFragment")
                         .commit();
                 showPlotFragment();
                 return true;
@@ -1077,7 +922,7 @@ public class AttysEP extends AppCompatActivity {
                 }
             }
         }
-        heartratePlotFragment = null;
+        aepPlotFragment = null;
     }
 
 

@@ -9,40 +9,17 @@
         app:showAsAction="ifRoom" />
 
     <item
-        android:title="ECG"
+        android:title="EP"
         app:showAsAction="ifRoom|withText">
 
         <menu>
 
-            <item android:title="ECG analysis">
-                <menu>
-                    <item
-                        android:id="@+id/plotWindowOff"
-                        android:title="off" />
-                    <item
-                        android:id="@+id/plotWindowBPM"
-                        android:title="Heart rate" />
-                    <item
-                        android:id="@+id/plotWindowVector"
-                        android:title="Vector ECG" />
-                </menu>
-            </item>
-
-            <group android:checkableBehavior="all">
-                <item
-                    android:id="@+id/showEinthoven"
-                    android:checked="true"
-                    android:title="Show Einthoven" />
-                <item
-                    android:id="@+id/showAugmented"
-                    android:checked="true"
-                    android:title="Show Augmented leads" />
-                <item
-                    android:id="@+id/notch"
-                    android:checked="false"
-                    android:title="Enable mains filter" />
-            </group>
-
+            <item
+                android:id="@+id/plotWindowOff"
+                android:title="Hide EP Plot" />
+            <item
+                android:id="@+id/plotWindowAEP"
+                android:title="Acoustically evoked potential (AEP)" />
             <item
                 android:checked="true"
                 android:title="gain">
