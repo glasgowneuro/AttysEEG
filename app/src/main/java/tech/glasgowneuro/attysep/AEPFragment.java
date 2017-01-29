@@ -20,7 +20,8 @@ import com.androidplot.xy.LineAndPointFormatter;
 import com.androidplot.xy.SimpleXYSeries;
 import com.androidplot.xy.XYPlot;
 
-import java.io.IOException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * Created by Bernd Porr on 20/01/17.
@@ -40,9 +41,10 @@ public class AEPFragment extends Fragment {
 
     private ToggleButton toggleButtonDoSweep;
 
-    private ClickSoundRunnable clickSoundRunnable = null;
-
     View view = null;
+
+    // in secs
+    final int SWEEP_DURATION_MS = 500;
 
     int nSamples = 250 / 2;
 
@@ -58,13 +60,15 @@ public class AEPFragment extends Fragment {
 
     boolean acceptData = false;
 
+    Timer timer = null;
+
     public void setSamplingrate(int _samplingrate) {
         samplingRate = _samplingrate;
     }
 
     private void reset() {
         ready = false;
-        nSamples = samplingRate / 2;
+        nSamples = (int) (samplingRate * SWEEP_DURATION_MS / 1000);
         float tmax = nSamples * (1.0F / ((float) samplingRate));
         //aepPlot.setRangeBoundaries(-10, 10, BoundaryMode.FIXED);
         aepPlot.setDomainBoundaries(0, tmax, BoundaryMode.FIXED);
@@ -80,8 +84,6 @@ public class AEPFragment extends Fragment {
 
         index = 0;
         nSweeps = 1;
-
-        clickSoundRunnable = new ClickSoundRunnable();
 
         /**
          DisplayMetrics metrics = new DisplayMetrics();
@@ -101,16 +103,16 @@ public class AEPFragment extends Fragment {
     }
 
 
-    private class ClickSoundRunnable implements Runnable {
+    private class ClickSoundTimer extends TimerTask {
 
         private AudioTrack sound;
         private byte[] rawAudio;
         int audioSamplingRate = 44100;
         int audio2eegRatio = audioSamplingRate / samplingRate;
-        int nAudioSamples = (nSamples-1) * audio2eegRatio;
         int clickduration = audioSamplingRate / 1000; // 1ms
+        int nAudioSamples = clickduration * 3;
 
-        public ClickSoundRunnable() {
+        public ClickSoundTimer() {
             sound = new AudioTrack(AudioManager.STREAM_MUSIC,
                     audioSamplingRate,
                     AudioFormat.CHANNEL_OUT_MONO,
@@ -118,18 +120,17 @@ public class AEPFragment extends Fragment {
                     nAudioSamples,
                     AudioTrack.MODE_STATIC);
             rawAudio = new byte[nAudioSamples];
-            for(int i=0;i<nAudioSamples;i++) {
-                rawAudio[i] = (byte)0x80;
+            for (int i = 0; i < nAudioSamples; i++) {
+                rawAudio[i] = (byte) 0x80;
             }
-            for(int i=0;i<clickduration;i++) {
-                rawAudio[i] = (byte)0x00;
-                rawAudio[i+clickduration] = (byte)0xff;
+            for (int i = 0; i < clickduration; i++) {
+                rawAudio[i] = (byte) 0x00;
+                rawAudio[i + clickduration] = (byte) 0xff;
             }
             sound.write(rawAudio, 0, rawAudio.length);
         }
 
-        @Override
-        public void run() {
+        public synchronized void run() {
             playSound();
         }
 
@@ -186,6 +187,15 @@ public class AEPFragment extends Fragment {
                 doSweeps = isChecked;
                 if (doSweeps) {
                     acceptData = true;
+                    if (timer != null) {
+                        timer.cancel();
+                        timer = null;
+                    }
+                    timer = new Timer();
+                    timer.schedule(new ClickSoundTimer(), 0, SWEEP_DURATION_MS);
+                } else {
+                    timer.cancel();
+                    timer = null;
                 }
             }
         });
@@ -213,10 +223,6 @@ public class AEPFragment extends Fragment {
         if (!ready) return;
 
         if (!acceptData) return;
-
-        if (index == 0) {
-            new Thread(clickSoundRunnable).start();
-        }
 
         if (getActivity() != null) {
             getActivity().runOnUiThread(new Runnable() {

@@ -16,10 +16,10 @@
 
             <item
                 android:id="@+id/plotWindowOff"
-                android:title="Hide EP Plot" />
+                android:title="OFF" />
             <item
                 android:id="@+id/plotWindowAEP"
-                android:title="Acoustically evoked potential (AEP)" />
+                android:title="AEP" />
             <item
                 android:checked="true"
                 android:title="gain">
