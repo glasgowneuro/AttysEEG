@@ -21,11 +21,4 @@
         android:key="powerline"
         android:defaultValue="50"
         android:title="Powerline frequency" />
-    <ListPreference
-        android:entries="@array/samplingRateOptions"
-        android:entryValues="@array/samplingRateValues"
-        android:summary="Sampling rate the Attys is acquiring the data and transmitting it"
-        android:key="samplingrate"
-        android:defaultValue="125"
-        android:title="Sampling rate" />
 </PreferenceScreen>

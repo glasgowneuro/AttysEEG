@@ -7,10 +7,12 @@ import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.TextView;
 import android.widget.ToggleButton;
@@ -18,10 +20,15 @@ import android.widget.ToggleButton;
 import com.androidplot.xy.BoundaryMode;
 import com.androidplot.xy.LineAndPointFormatter;
 import com.androidplot.xy.SimpleXYSeries;
+import com.androidplot.xy.StepMode;
 import com.androidplot.xy.XYPlot;
 
+import java.text.FieldPosition;
+import java.text.NumberFormat;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import uk.me.berndporr.iirj.Butterworth;
 
 /**
  * Created by Bernd Porr on 20/01/17.
@@ -41,10 +48,12 @@ public class AEPFragment extends Fragment {
 
     private ToggleButton toggleButtonDoSweep;
 
+    private Button resetButton;
+
     View view = null;
 
     // in secs
-    final int SWEEP_DURATION_MS = 500;
+    final int SWEEP_DURATION_MS = 501;
 
     int nSamples = 250 / 2;
 
@@ -60,81 +69,96 @@ public class AEPFragment extends Fragment {
 
     boolean acceptData = false;
 
+    int soundTimer = 1;
+
     Timer timer = null;
 
     public void setSamplingrate(int _samplingrate) {
         samplingRate = _samplingrate;
     }
 
+    private void resetSoundTimer() {
+        soundTimer = SWEEP_DURATION_MS / (1000 / samplingRate);
+    }
+
+    public void stopSweeps() {
+        if (timer != null) {
+            timer.cancel();
+        }
+        if (toggleButtonDoSweep != null) {
+            toggleButtonDoSweep.setChecked(false);
+        }
+        timer = null;
+        doSweeps = false;
+        acceptData = false;
+    }
+
     private void reset() {
         ready = false;
         nSamples = (int) (samplingRate * SWEEP_DURATION_MS / 1000);
+        resetSoundTimer();
         float tmax = nSamples * (1.0F / ((float) samplingRate));
         //aepPlot.setRangeBoundaries(-10, 10, BoundaryMode.FIXED);
-        aepPlot.setDomainBoundaries(0, tmax, BoundaryMode.FIXED);
+        aepPlot.setDomainBoundaries(0, tmax * 1000, BoundaryMode.FIXED);
+
         aepPlot.addSeries(epHistorySeries,
                 new LineAndPointFormatter(
                         Color.rgb(100, 255, 255), null, null, null));
-        aepPlot.setDomainLabel("t/sec");
+        aepPlot.setDomainLabel("t/msec");
         aepPlot.setRangeLabel("");
 
         for (int i = 0; i < nSamples; i++) {
-            epHistorySeries.addLast(i * (1.0F / ((float) samplingRate)), 0.0);
+            epHistorySeries.addLast(1000.0F * (float) i * (1.0F / ((float) samplingRate)), 0.0);
         }
 
         index = 0;
         nSweeps = 1;
 
-        /**
-         DisplayMetrics metrics = new DisplayMetrics();
-         getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
-         int width = metrics.widthPixels;
-         int height = metrics.heightPixels;
-         if ((height > 1000) && (width > 1000)) {
-         aepPlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 25);
-         aepPlot.setRangeStep(StepMode.INCREMENT_BY_VAL, 25);
-         } else {
-         aepPlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 50);
-         aepPlot.setRangeStep(StepMode.INCREMENT_BY_VAL, 50);
-         }
-         **/
+        DisplayMetrics metrics = new DisplayMetrics();
+        getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
+        int width = metrics.widthPixels;
+        int height = metrics.heightPixels;
+        if ((height > 1000) && (width > 1000)) {
+            aepPlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 50);
+        } else {
+            aepPlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 100);
+        }
+
+        initSound();
 
         ready = true;
     }
 
 
-    private class ClickSoundTimer extends TimerTask {
+    private AudioTrack sound;
+    private byte[] rawAudio;
+    int audioSamplingRate = 44100;
+    int clickduration = audioSamplingRate / 1000; // 1ms
+    int nAudioSamples = clickduration * 3;
 
-        private AudioTrack sound;
-        private byte[] rawAudio;
-        int audioSamplingRate = 44100;
-        int audio2eegRatio = audioSamplingRate / samplingRate;
-        int clickduration = audioSamplingRate / 1000; // 1ms
-        int nAudioSamples = clickduration * 3;
-
-        public ClickSoundTimer() {
-            sound = new AudioTrack(AudioManager.STREAM_MUSIC,
-                    audioSamplingRate,
-                    AudioFormat.CHANNEL_OUT_MONO,
-                    AudioFormat.ENCODING_PCM_8BIT,
-                    nAudioSamples,
-                    AudioTrack.MODE_STATIC);
-            rawAudio = new byte[nAudioSamples];
-            for (int i = 0; i < nAudioSamples; i++) {
-                rawAudio[i] = (byte) 0x80;
-            }
-            for (int i = 0; i < clickduration; i++) {
-                rawAudio[i] = (byte) 0x00;
-                rawAudio[i + clickduration] = (byte) 0xff;
-            }
-            sound.write(rawAudio, 0, rawAudio.length);
+    public void initSound() {
+        sound = new AudioTrack(AudioManager.STREAM_MUSIC,
+                audioSamplingRate,
+                AudioFormat.CHANNEL_OUT_MONO,
+                AudioFormat.ENCODING_PCM_8BIT,
+                nAudioSamples,
+                AudioTrack.MODE_STATIC);
+        rawAudio = new byte[nAudioSamples];
+        for (int i = 0; i < nAudioSamples; i++) {
+            rawAudio[i] = (byte) 0x80;
         }
+        for (int i = 0; i < clickduration; i++) {
+            rawAudio[i] = (byte) 0x00;
+            rawAudio[i + clickduration] = (byte) 0xff;
+        }
+        sound.write(rawAudio, 0, rawAudio.length);
+    }
 
+
+    private class ClickSoundTimer implements Runnable {
+
+        @Override
         public synchronized void run() {
-            playSound();
-        }
-
-        private synchronized void playSound() {
             switch (sound.getPlayState()) {
                 case AudioTrack.PLAYSTATE_PAUSED:
                     sound.stop();
@@ -154,11 +178,14 @@ public class AEPFragment extends Fragment {
                     break;
             }
         }
+    }
 
-        public synchronized void release() {
-            sound.release();
+
+    private void resetAEP() {
+        for (int i = 0; i < nSamples; i++) {
+            epHistorySeries.setY(0, i);
         }
-
+        nSweeps = 1;
     }
 
 
@@ -181,24 +208,23 @@ public class AEPFragment extends Fragment {
         // setup the APR Levels plot:
         aepPlot = (XYPlot) view.findViewById(R.id.bpmPlotView);
         sweepNoText = (TextView) view.findViewById(R.id.bpmTextView);
+        sweepNoText.setText(String.format("%04d sweeps", 0));
         toggleButtonDoSweep = (ToggleButton) view.findViewById(R.id.doSweeps);
         toggleButtonDoSweep.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                doSweeps = isChecked;
-                if (doSweeps) {
+                if (isChecked) {
                     acceptData = true;
-                    if (timer != null) {
-                        timer.cancel();
-                        timer = null;
-                    }
-                    timer = new Timer();
-                    timer.schedule(new ClickSoundTimer(), 0, SWEEP_DURATION_MS);
-                } else {
-                    timer.cancel();
-                    timer = null;
                 }
+                doSweeps = isChecked;
             }
         });
+        resetButton = (Button) view.findViewById(R.id.aepReset);
+        resetButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                resetAEP();
+            }
+        });
+
 
         epHistorySeries = new SimpleXYSeries("AEP/uV");
         if (epHistorySeries == null) {
@@ -218,11 +244,30 @@ public class AEPFragment extends Fragment {
 
     }
 
+    public void tick(long samplenumber) {
+        if (!ready) return;
+        if (!acceptData) return;
+        soundTimer--;
+        if (soundTimer == 0) {
+//            Log.v(TAG,"Starting sweep at: "+samplenumber);
+            if (doSweeps) {
+                new Thread(new ClickSoundTimer()).start();
+                nSweeps++;
+            } else {
+                acceptData = false;
+            }
+            resetSoundTimer();
+            index = 0;
+        }
+    }
+
     public synchronized void addValue(final float v) {
 
         if (!ready) return;
 
         if (!acceptData) return;
+
+        if (index >= nSamples) return;
 
         if (getActivity() != null) {
             getActivity().runOnUiThread(new Runnable() {
@@ -252,13 +297,6 @@ public class AEPFragment extends Fragment {
             epHistorySeries.setY(avg, index);
         }
         index++;
-        if (index >= nSamples) {
-            index = 0;
-            nSweeps++;
-            if (!doSweeps) {
-                acceptData = false;
-            }
-        }
     }
 
     public void redraw() {

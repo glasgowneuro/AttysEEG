@@ -86,11 +86,14 @@ public class AttysEP extends AppCompatActivity {
 
     private static final String TAG = "AttysEP";
 
-    private Highpass highpass_II = null;
+    private Butterworth highpass_II = null;
     private float gain = 2000;
-    private Butterworth iirNotch_II = null;
-    private double notchBW = 2.5; // Hz
-    private int notchOrder = 2;
+    private Butterworth iirNotch_mains_fundamental = null;
+    private Butterworth iirNotch_mains_1st_harmonic = null;
+    private Butterworth iirNotch_mains_2nd_harmonic = null;
+    private Butterworth iirLP = null;
+    private double notchBW = 5; // Hz
+    private int notchOrder = 4;
     private float powerlineHz = 50;
 
     private float ytick = 0;
@@ -259,6 +262,16 @@ public class AttysEP extends AppCompatActivity {
     };
 
 
+    AttysComm.DataListener dataListener = new AttysComm.DataListener() {
+        @Override
+        public void gotData(long samplenumber, float[] data) {
+            if (aepPlotFragment != null) {
+                aepPlotFragment.tick(samplenumber);
+            }
+        }
+    };
+
+
     private BluetoothDevice connect2Bluetooth() {
 
         Intent turnOn = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -300,44 +313,6 @@ public class AttysEP extends AppCompatActivity {
 
 
     private class UpdatePlotTask extends TimerTask {
-
-        private int ignoreECGdetector = 1000;
-        private double max, min;
-        private float t2 = 0;
-        private int doNotDetect = 0;
-        private float[] analysisBuffer;
-        private int analysisPtr = 0;
-        private float[] hrBuffer = new float[3];
-        private float[] sortBuffer = new float[3];
-        private Butterworth ecgDetector = new Butterworth();
-        private Butterworth ecgDetNotch = new Butterworth();
-        private String m_unit = "";
-        private float scaling_factor = 1;
-
-        private void resetAnalysis() {
-            max = 0;
-            min = 0;
-            t2 = 0;
-            doNotDetect = 0;
-            ignoreECGdetector = attysComm.getSamplingRateInHz();
-            analysisPtr = 0;
-            hrBuffer[0] = 0;
-            hrBuffer[1] = 0;
-            hrBuffer[2] = 0;
-
-            m_unit = AttysComm.CHANNEL_UNITS[AttysComm.INDEX_Analogue_channel_1];
-
-            scaling_factor = 1;
-
-            annotatePlot();
-        }
-
-        UpdatePlotTask() {
-            analysisBuffer = new float[attysComm.getSamplingRateInHz()];
-            // this fakes an R peak so we have a matched filter!
-            ecgDetector.bandPass(2, attysComm.getSamplingRateInHz(), 20, 15);
-            ecgDetNotch.bandStop(notchOrder, attysComm.getSamplingRateInHz(), powerlineHz, notchBW);
-        }
 
         private void annotatePlot() {
             String small = "";
@@ -395,9 +370,18 @@ public class AttysEP extends AppCompatActivity {
                             timestamp++;
 
                             float II = sample[AttysComm.INDEX_Analogue_channel_1];
-                            II = highpass_II.filter(II);
-                            if (iirNotch_II != null) {
-                                II = (float) iirNotch_II.filter((double) II);
+                            II = (float)highpass_II.filter((double)II);
+                            if (iirNotch_mains_fundamental != null) {
+                                II = (float) iirNotch_mains_fundamental.filter((double) II);
+                            }
+                            if (iirNotch_mains_1st_harmonic != null) {
+                                II = (float) iirNotch_mains_1st_harmonic.filter((double) II);
+                            }
+                            if (iirNotch_mains_2nd_harmonic != null) {
+                                II = (float) iirNotch_mains_2nd_harmonic.filter((double) II);
+                            }
+                            if (iirLP != null) {
+                                II = (float) iirLP.filter((double) II);
                             }
 
                             dataRecorder.saveData(II);
@@ -478,8 +462,11 @@ public class AttysEP extends AppCompatActivity {
         Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
 
-        iirNotch_II = new Butterworth();
-        highpass_II = new Highpass();
+        iirNotch_mains_fundamental = new Butterworth();
+        iirNotch_mains_1st_harmonic = new Butterworth();
+        iirNotch_mains_2nd_harmonic = new Butterworth();
+        iirLP = new Butterworth();
+        highpass_II = new Butterworth();
         gain = 2000;
 
         // ATTENTION: This was auto-generated to implement the App Indexing API.
@@ -494,14 +481,6 @@ public class AttysEP extends AppCompatActivity {
 
         startDAQ();
 
-    }
-
-
-    @Override
-    public void onResume() {
-        super.onResume();
-
-        updatePlotTask.resetAnalysis();
     }
 
 
@@ -527,31 +506,23 @@ public class AttysEP extends AppCompatActivity {
 
         attysComm = new AttysComm(btAttysDevice);
         attysComm.registerMessageListener(messageListener);
+        attysComm.registerDataListener(dataListener);
+        attysComm.setFullOrPartialData(AttysComm.PARTIAL_DATA);
 
         getsetAttysPrefs();
 
-        highpass_II.setAlpha(1.0F / attysComm.getSamplingRateInHz());
-        iirNotch_II.bandStop(notchOrder,
+        iirNotch_mains_fundamental.bandStop(notchOrder,
                 attysComm.getSamplingRateInHz(), powerlineHz, notchBW);
+        iirNotch_mains_1st_harmonic.bandStop(notchOrder,
+                attysComm.getSamplingRateInHz(), powerlineHz*2, notchBW);
+        iirNotch_mains_2nd_harmonic.bandStop(notchOrder,
+                attysComm.getSamplingRateInHz(), powerlineHz*3, notchBW);
+        iirLP.lowPass(2,attysComm.getSamplingRateInHz(),200);
+        highpass_II.highPass(2,attysComm.getSamplingRateInHz(),10);
 
         realtimePlotView = (RealtimePlotView) findViewById(R.id.realtimeplotview);
         realtimePlotView.setMaxChannels(15);
         realtimePlotView.init();
-
-        realtimePlotView.registerTouchEventListener(
-                new RealtimePlotView.TouchEventListener() {
-                    @Override
-                    public void touchedChannel(int chNo) {
-                        try {
-                            // theChannelWeDoAnalysis = actualChannelIdx[chNo];
-                            updatePlotTask.resetAnalysis();
-                        } catch (Exception e) {
-                            if (Log.isLoggable(TAG, Log.ERROR)) {
-                                Log.e(TAG, "Exception in the TouchEventListener (BUG!):", e);
-                            }
-                        }
-                    }
-                });
 
         infoView = (InfoView) findViewById(R.id.infoview);
         infoView.setZOrderOnTop(true);
@@ -561,7 +532,6 @@ public class AttysEP extends AppCompatActivity {
 
         timer = new Timer();
         updatePlotTask = new UpdatePlotTask();
-        updatePlotTask.resetAnalysis();
         timer.schedule(updatePlotTask, 0, REFRESH_IN_MS);
     }
 
@@ -639,6 +609,10 @@ public class AttysEP extends AppCompatActivity {
         }
 
         killAttysComm();
+
+        if (aepPlotFragment != null) {
+            aepPlotFragment.stopSweeps();
+        }
 
         AppIndex.AppIndexApi.end(client, viewAction);
         client.disconnect();
@@ -937,7 +911,7 @@ public class AttysEP extends AppCompatActivity {
 
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 
-        mux = AttysComm.ADC_MUX_ECG_EINTHOVEN;
+        mux = AttysComm.ADC_MUX_NORMAL;
         byte adcgain = (byte) (Integer.parseInt(prefs.getString("gainpref", "0")));
         attysComm.setAdc1_gain_index(adcgain);
         attysComm.setAdc0_mux_index(mux);
@@ -952,9 +926,7 @@ public class AttysEP extends AppCompatActivity {
             Log.d(TAG, "powerline=" + powerlineHz);
         }
 
-        samplingRate = (byte) Integer.parseInt(prefs.getString("samplingrate", "0"));
-        if (samplingRate > 1) samplingRate = 1;
-
+        samplingRate = AttysComm.ADC_RATE_500Hz;
         attysComm.setAdc_samplingrate_index(samplingRate);
     }
 
