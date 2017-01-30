@@ -75,6 +75,10 @@ public class AttysEEG extends AppCompatActivity {
 
     private final float DEFAULT_GAIN = 4000;
 
+    // overall filtering
+    private float allChLowpassF = 200;
+    private float allChHighpassF = 0.5F;
+
     // EEG frequency bands
     private float betaFlow = 13;
     private float betaFhigh = 30;
@@ -94,6 +98,7 @@ public class AttysEEG extends AppCompatActivity {
     private RealtimePlotView realtimePlotView = null;
     private InfoView infoView = null;
     private AEPFragment aepPlotFragment = null;
+    private VEPFragment vepPlotFragment = null;
 
     private BluetoothAdapter BA;
     private AttysComm attysComm = null;
@@ -318,6 +323,9 @@ public class AttysEEG extends AppCompatActivity {
             if (aepPlotFragment != null) {
                 aepPlotFragment.tick(samplenumber);
             }
+            if (vepPlotFragment != null) {
+                vepPlotFragment.tick(samplenumber);
+            }
         }
     };
 
@@ -454,6 +462,9 @@ public class AttysEEG extends AppCompatActivity {
                             if (aepPlotFragment != null) {
                                 aepPlotFragment.addValue((float) filteredEEG);
                             }
+                            if (vepPlotFragment != null) {
+                                vepPlotFragment.addValue((float) filteredEEG);
+                            }
 
                             // now plotting it in the main window
                             int nRealChN = 0;
@@ -527,6 +538,9 @@ public class AttysEEG extends AppCompatActivity {
                     }
                     if (aepPlotFragment != null) {
                         aepPlotFragment.redraw();
+                    }
+                    if (vepPlotFragment != null) {
+                        vepPlotFragment.redraw();
                     }
                 }
             }
@@ -636,8 +650,12 @@ public class AttysEEG extends AppCompatActivity {
                 attysComm.getSamplingRateInHz(), powerlineHz * 3, notchBW);
 
         // general lowpass filter
-        lowpass.lowPass(2, attysComm.getSamplingRateInHz(), 200);
-        highpass.highPass(2, attysComm.getSamplingRateInHz(), 10);
+        lowpass.lowPass(2, attysComm.getSamplingRateInHz(), allChLowpassF);
+
+        // highpass filter
+        highpass.highPass(2, attysComm.getSamplingRateInHz(), allChHighpassF);
+
+        gammaHighpass.highPass(2, attysComm.getSamplingRateInHz(), gammaFlow);
 
         // for beta waves
         betaHighpass.highPass(2, attysComm.getSamplingRateInHz(), betaFlow);
@@ -746,6 +764,10 @@ public class AttysEEG extends AppCompatActivity {
 
         if (aepPlotFragment != null) {
             aepPlotFragment.stopSweeps();
+        }
+
+        if (vepPlotFragment != null) {
+            vepPlotFragment.stopSweeps();
         }
 
         AppIndex.AppIndexApi.end(client, viewAction);
@@ -983,12 +1005,30 @@ public class AttysEEG extends AppCompatActivity {
                 aepPlotFragment.setSamplingrate(attysComm.getSamplingRateInHz());
                 // Add the fragment to the 'fragment_container' FrameLayout
                 if (Log.isLoggable(TAG, Log.DEBUG)) {
-                    Log.d(TAG, "Adding heartrate fragment");
+                    Log.d(TAG, "Adding AEP fragment");
                 }
                 getSupportFragmentManager().beginTransaction()
                         .add(R.id.fragment_plot_container,
                                 aepPlotFragment,
                                 "aepPlotFragment")
+                        .commit();
+                showPlotFragment();
+                return true;
+
+            case R.id.plotWindowVEP:
+
+                deletePlotWindow();
+                // Create a new Fragment to be placed in the activity layout
+                vepPlotFragment = new VEPFragment();
+                vepPlotFragment.setSamplingrate(attysComm.getSamplingRateInHz());
+                // Add the fragment to the 'fragment_container' FrameLayout
+                if (Log.isLoggable(TAG, Log.DEBUG)) {
+                    Log.d(TAG, "Adding AEP fragment");
+                }
+                getSupportFragmentManager().beginTransaction()
+                        .add(R.id.fragment_plot_container,
+                                vepPlotFragment,
+                                "vepPlotFragment")
                         .commit();
                 showPlotFragment();
                 return true;

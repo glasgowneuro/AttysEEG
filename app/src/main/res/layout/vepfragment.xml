@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<android.support.percent.PercentFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent">
+
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:ap="http://schemas.android.com/apk/res-auto"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        app:layout_heightPercent="95%"
+        app:layout_widthPercent="95%">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <ToggleButton
+                android:layout_weight="1"
+                android:id="@+id/vep_doSweeps"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content" />
+
+            <Button
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="save"
+                android:id="@+id/vepSave" />
+
+            <TextView
+                android:id="@+id/vep_nsweepsTextView"
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:gravity="end"
+                android:text=""
+                android:textColor="#00FFFF"
+                android:textSize="12sp" />
+
+            <Button
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="RESET"
+                android:id="@+id/vepReset"
+                />
+
+        </LinearLayout>
+
+        <com.androidplot.xy.XYPlot
+            android:id="@+id/vepPlotView"
+            style="@style/APDefacto.Dark"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            ap:domainTitle="domain"
+            ap:lineLabelRotationBottom="-45"
+            ap:lineLabels="left|bottom"
+            ap:rangeTitle="range"
+            ap:title="VEP/uV" />
+
+    </LinearLayout>
+
+</android.support.percent.PercentFrameLayout>

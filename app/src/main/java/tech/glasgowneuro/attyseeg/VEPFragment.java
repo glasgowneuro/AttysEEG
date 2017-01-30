@@ -1,14 +1,13 @@
 package tech.glasgowneuro.attyseeg;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.media.AudioFormat;
-import android.media.AudioManager;
-import android.media.AudioTrack;
+import android.hardware.camera2.CameraManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
@@ -38,23 +37,18 @@ import java.io.PrintWriter;
 import java.util.Timer;
 
 import tech.glasgowneuro.attyscomm.AttysComm;
-import uk.me.berndporr.iirj.Butterworth;
 
 /**
- * Created by Bernd Porr on 20/01/17.
- * <p>
- * Heartrate Plot
+ * Created by bp1 on 30/01/17.
  */
 
-public class AEPFragment extends Fragment {
+public class VEPFragment extends Fragment {
 
-    String TAG = "AEPFragment";
-
-    final float highpassFreq = 10;
+    String TAG = "VEPFragment";
 
     private SimpleXYSeries epHistorySeries = null;
 
-    private XYPlot aepPlot = null;
+    private XYPlot vepPlot = null;
 
     private TextView sweepNoText = null;
 
@@ -83,7 +77,7 @@ public class AEPFragment extends Fragment {
 
     boolean acceptData = false;
 
-    int soundTimer = 1;
+    int flashTimer = 1;
 
     Timer timer = null;
 
@@ -91,14 +85,15 @@ public class AEPFragment extends Fragment {
 
     private byte dataSeparator = AttysComm.DATA_SEPARATOR_TAB;
 
-    Butterworth highpass;
+    CameraManager cameraManager = null;
+    String cameraId = null;
 
     public void setSamplingrate(int _samplingrate) {
         samplingRate = _samplingrate;
     }
 
     private void resetSoundTimer() {
-        soundTimer = SWEEP_DURATION_MS / (1000 / samplingRate);
+        flashTimer = SWEEP_DURATION_MS / (1000 / samplingRate);
     }
 
     public void stopSweeps() {
@@ -115,18 +110,17 @@ public class AEPFragment extends Fragment {
 
     private void reset() {
         ready = false;
-        highpass.highPass(2,samplingRate,highpassFreq);
         nSamples = (int) (samplingRate * SWEEP_DURATION_MS / 1000);
         resetSoundTimer();
         float tmax = nSamples * (1.0F / ((float) samplingRate));
-        //aepPlot.setRangeBoundaries(-10, 10, BoundaryMode.FIXED);
-        aepPlot.setDomainBoundaries(0, tmax * 1000, BoundaryMode.FIXED);
+        //vepPlot.setRangeBoundaries(-10, 10, BoundaryMode.FIXED);
+        vepPlot.setDomainBoundaries(0, tmax * 1000, BoundaryMode.FIXED);
 
-        aepPlot.addSeries(epHistorySeries,
+        vepPlot.addSeries(epHistorySeries,
                 new LineAndPointFormatter(
                         Color.rgb(100, 255, 255), null, null, null));
-        aepPlot.setDomainLabel("t/msec");
-        aepPlot.setRangeLabel("");
+        vepPlot.setDomainLabel("t/msec");
+        vepPlot.setRangeLabel("");
 
         for (int i = 0; i < nSamples; i++) {
             epHistorySeries.addLast(1000.0F * (float) i * (1.0F / ((float) samplingRate)), 0.0);
@@ -140,69 +134,43 @@ public class AEPFragment extends Fragment {
         int width = metrics.widthPixels;
         int height = metrics.heightPixels;
         if ((height > 1000) && (width > 1000)) {
-            aepPlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 50);
+            vepPlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 50);
         } else {
-            aepPlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 100);
+            vepPlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 100);
         }
 
-        initSound();
+        initFlash();
 
         ready = true;
     }
 
 
-    private AudioTrack sound;
-    private byte[] rawAudio;
-    int audioSamplingRate = 44100;
-    int clickduration = audioSamplingRate / 1000; // 1ms
-    int nAudioSamples = clickduration * 3;
-
-    public void initSound() {
-        sound = new AudioTrack(AudioManager.STREAM_MUSIC,
-                audioSamplingRate,
-                AudioFormat.CHANNEL_OUT_MONO,
-                AudioFormat.ENCODING_PCM_8BIT,
-                nAudioSamples,
-                AudioTrack.MODE_STATIC);
-        rawAudio = new byte[nAudioSamples];
-        for (int i = 0; i < nAudioSamples; i++) {
-            rawAudio[i] = (byte) 0x80;
+    public void initFlash() {
+        cameraManager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
+        try {
+            cameraId = cameraManager.getCameraIdList()[0];
+        } catch (Exception e) {
+            Log.d(TAG, "Could not find any flash");
         }
-        for (int i = 0; i < clickduration; i++) {
-            rawAudio[i] = (byte) 0x00;
-            rawAudio[i + clickduration] = (byte) 0xff;
-        }
-        sound.write(rawAudio, 0, rawAudio.length);
     }
 
 
-    private class ClickSoundTimer implements Runnable {
+    private class FlashTimer implements Runnable {
 
         @Override
         public synchronized void run() {
-            switch (sound.getPlayState()) {
-                case AudioTrack.PLAYSTATE_PAUSED:
-                    sound.stop();
-                    sound.reloadStaticData();
-                    sound.play();
-                    break;
-                case AudioTrack.PLAYSTATE_PLAYING:
-                    sound.stop();
-                    sound.reloadStaticData();
-                    sound.play();
-                    break;
-                case AudioTrack.PLAYSTATE_STOPPED:
-                    sound.reloadStaticData();
-                    sound.play();
-                    break;
-                default:
-                    break;
+            try {
+                cameraManager.setTorchMode(cameraId, true);
+                Thread.sleep(100, 0);
+                cameraManager.setTorchMode(cameraId, false);
+            } catch (Exception e) {
+                Log.d(TAG, "Could not switch on flash");
             }
         }
     }
 
 
-    private void resetAEP() {
+    private void resetVEP() {
         for (int i = 0; i < nSamples; i++) {
             epHistorySeries.setY(0, i);
         }
@@ -224,15 +192,13 @@ public class AEPFragment extends Fragment {
             return null;
         }
 
-        highpass = new Butterworth();
-
-        view = inflater.inflate(R.layout.eapfragment, container, false);
+        view = inflater.inflate(R.layout.vepfragment, container, false);
 
         // setup the APR Levels plot:
-        aepPlot = (XYPlot) view.findViewById(R.id.bpmPlotView);
-        sweepNoText = (TextView) view.findViewById(R.id.nsweepsTextView);
+        vepPlot = (XYPlot) view.findViewById(R.id.vepPlotView);
+        sweepNoText = (TextView) view.findViewById(R.id.vep_nsweepsTextView);
         sweepNoText.setText(String.format("%04d sweeps", 0));
-        toggleButtonDoSweep = (ToggleButton) view.findViewById(R.id.doSweeps);
+        toggleButtonDoSweep = (ToggleButton) view.findViewById(R.id.vep_doSweeps);
         toggleButtonDoSweep.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
@@ -241,21 +207,21 @@ public class AEPFragment extends Fragment {
                 doSweeps = isChecked;
             }
         });
-        resetButton = (Button) view.findViewById(R.id.aepReset);
+        resetButton = (Button) view.findViewById(R.id.vepReset);
         resetButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                resetAEP();
+                resetVEP();
             }
         });
-        saveButton = (Button) view.findViewById(R.id.aepSave);
+        saveButton = (Button) view.findViewById(R.id.vepSave);
         saveButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                saveAEP();
+                saveVEP();
             }
         });
 
 
-        epHistorySeries = new SimpleXYSeries("AEP/uV");
+        epHistorySeries = new SimpleXYSeries("VEP/uV");
         if (epHistorySeries == null) {
             if (Log.isLoggable(TAG, Log.ERROR)) {
                 Log.e(TAG, "epHistorySeries == null");
@@ -264,8 +230,8 @@ public class AEPFragment extends Fragment {
 
         Paint paint = new Paint();
         paint.setColor(Color.argb(128, 0, 255, 0));
-        aepPlot.getGraph().setDomainGridLinePaint(paint);
-        aepPlot.getGraph().setRangeGridLinePaint(paint);
+        vepPlot.getGraph().setDomainGridLinePaint(paint);
+        vepPlot.getGraph().setRangeGridLinePaint(paint);
 
         reset();
 
@@ -274,7 +240,7 @@ public class AEPFragment extends Fragment {
     }
 
 
-    private void writeAEPfile() throws IOException {
+    private void writeVEPfile() throws IOException {
 
         PrintWriter aepdataFileStream;
 
@@ -285,7 +251,7 @@ public class AEPFragment extends Fragment {
         try {
             file = new File(AttysEEG.ATTYSDIR, dataFilename.trim());
             file.createNewFile();
-            Log.d(TAG,"Saving AEP to "+file.getAbsolutePath());
+            Log.d(TAG, "Saving VEP to " + file.getAbsolutePath());
             aepdataFileStream = new PrintWriter(file);
         } catch (java.io.FileNotFoundException e) {
             throw e;
@@ -309,7 +275,7 @@ public class AEPFragment extends Fragment {
                     epHistorySeries.getX(i), s,
                     epHistorySeries.getY(i), s);
             if (aepdataFileStream.checkError()) {
-                throw new IOException("AEP write error");
+                throw new IOException("VEP write error");
             }
         }
 
@@ -322,7 +288,7 @@ public class AEPFragment extends Fragment {
     }
 
 
-    private void saveAEP() {
+    private void saveVEP() {
 
         final EditText filenameEditText = new EditText(getContext());
         filenameEditText.setSingleLine(true);
@@ -346,7 +312,7 @@ public class AEPFragment extends Fragment {
         filenameEditText.setText(dataFilename);
 
         new AlertDialog.Builder(getContext())
-                .setTitle("Saving AEP data")
+                .setTitle("Saving VEP data")
                 .setMessage("Enter the filename of the data textfile")
                 .setView(filenameEditText)
                 .setPositiveButton("OK", new DialogInterface.OnClickListener() {
@@ -366,7 +332,7 @@ public class AEPFragment extends Fragment {
                             }
                         }
                         try {
-                            writeAEPfile();
+                            writeVEPfile();
                             Toast.makeText(getActivity(),
                                     "Successfully written '" + dataFilename + "' to the external memory",
                                     Toast.LENGTH_SHORT).show();
@@ -374,7 +340,7 @@ public class AEPFragment extends Fragment {
                             Toast.makeText(getActivity(),
                                     "Write Error while saving '" + dataFilename + "' to the external memory",
                                     Toast.LENGTH_SHORT).show();
-                            Log.d(TAG, "Error saving AEP file: ", e);
+                            Log.d(TAG, "Error saving VEP file: ", e);
                         }
                         ;
                     }
@@ -390,21 +356,11 @@ public class AEPFragment extends Fragment {
     public void tick(long samplenumber) {
         if (!ready) return;
         if (!acceptData) return;
-        soundTimer--;
-        if (soundTimer == 0) {
+        flashTimer--;
+        if (flashTimer == 0) {
 //            Log.v(TAG,"Starting sweep at: "+samplenumber);
             if (doSweeps) {
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (sweepNoText != null) {
-                                sweepNoText.setText(String.format("%04d sweeps", nSweeps));
-                            }
-                        }
-                    });
-                }
-                new Thread(new ClickSoundTimer()).start();
+                new Thread(new VEPFragment.FlashTimer()).start();
                 nSweeps++;
             } else {
                 acceptData = false;
@@ -422,6 +378,17 @@ public class AEPFragment extends Fragment {
 
         if (index >= nSamples) return;
 
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (sweepNoText != null) {
+                        sweepNoText.setText(String.format("%04d sweeps", nSweeps));
+                    }
+                }
+            });
+        }
+
         if (epHistorySeries == null) {
             if (Log.isLoggable(TAG, Log.VERBOSE)) {
                 Log.v(TAG, "epHistorySeries == null");
@@ -430,7 +397,7 @@ public class AEPFragment extends Fragment {
         }
 
         double avg = epHistorySeries.getY(index).doubleValue();
-        double v2 = highpass.filter(v * 1E6);
+        double v2 = v * 1E6;
         //avg = (avg + new_value)/2;
         double nSweepsD = (double) nSweeps;
         avg = ((nSweepsD - 1) / nSweepsD) * avg + (1 / nSweepsD) * v2;
@@ -442,8 +409,8 @@ public class AEPFragment extends Fragment {
     }
 
     public void redraw() {
-        if (aepPlot != null) {
-            aepPlot.redraw();
+        if (vepPlot != null) {
+            vepPlot.redraw();
         }
     }
 }
