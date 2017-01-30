@@ -15,7 +15,7 @@
  **/
 
 
-package tech.glasgowneuro.attysep;
+package tech.glasgowneuro.attyseeg;
 
 /**
  * Simple 1st order highpass filter to remove the DC from the signals

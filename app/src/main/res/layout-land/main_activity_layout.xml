@@ -28,7 +28,7 @@
             android:id="@+id/mainplotlayout"
             android:orientation="vertical">
 
-            <tech.glasgowneuro.attysep.InfoView
+            <tech.glasgowneuro.attyseeg.InfoView
                 android:layout_gravity="bottom|right"
                 android:id="@+id/infoview"
                 title="Plot Window"
@@ -39,7 +39,7 @@
                 android:layout_marginRight="10dp"
                 android:layout_marginTop="10dp" />
 
-            <tech.glasgowneuro.attysep.RealtimePlotView
+            <tech.glasgowneuro.attyseeg.RealtimePlotView
                 android:layout_gravity="bottom|right"
                 android:id="@+id/realtimeplotview"
                 title="Plot Window"

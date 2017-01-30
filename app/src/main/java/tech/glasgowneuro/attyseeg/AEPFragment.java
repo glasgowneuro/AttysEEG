@@ -1,12 +1,19 @@
-package tech.glasgowneuro.attysep;
+package tech.glasgowneuro.attyseeg;
 
+import android.Manifest;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
+import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.AlertDialog;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -14,7 +21,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import com.androidplot.xy.BoundaryMode;
@@ -23,12 +32,12 @@ import com.androidplot.xy.SimpleXYSeries;
 import com.androidplot.xy.StepMode;
 import com.androidplot.xy.XYPlot;
 
-import java.text.FieldPosition;
-import java.text.NumberFormat;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Timer;
-import java.util.TimerTask;
 
-import uk.me.berndporr.iirj.Butterworth;
+import tech.glasgowneuro.attyscomm.AttysComm;
 
 /**
  * Created by Bernd Porr on 20/01/17.
@@ -49,6 +58,8 @@ public class AEPFragment extends Fragment {
     private ToggleButton toggleButtonDoSweep;
 
     private Button resetButton;
+
+    private Button saveButton;
 
     View view = null;
 
@@ -72,6 +83,10 @@ public class AEPFragment extends Fragment {
     int soundTimer = 1;
 
     Timer timer = null;
+
+    private String dataFilename = null;
+
+    private byte dataSeparator = AttysComm.DATA_SEPARATOR_TAB;
 
     public void setSamplingrate(int _samplingrate) {
         samplingRate = _samplingrate;
@@ -207,7 +222,7 @@ public class AEPFragment extends Fragment {
 
         // setup the APR Levels plot:
         aepPlot = (XYPlot) view.findViewById(R.id.bpmPlotView);
-        sweepNoText = (TextView) view.findViewById(R.id.bpmTextView);
+        sweepNoText = (TextView) view.findViewById(R.id.nsweepsTextView);
         sweepNoText.setText(String.format("%04d sweeps", 0));
         toggleButtonDoSweep = (ToggleButton) view.findViewById(R.id.doSweeps);
         toggleButtonDoSweep.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -222,6 +237,12 @@ public class AEPFragment extends Fragment {
         resetButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 resetAEP();
+            }
+        });
+        saveButton = (Button) view.findViewById(R.id.aepSave);
+        saveButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                saveAEP();
             }
         });
 
@@ -243,6 +264,120 @@ public class AEPFragment extends Fragment {
         return view;
 
     }
+
+
+    private void writeAEPfile() throws IOException {
+
+        PrintWriter aepdataFileStream;
+
+        if (dataFilename == null) return;
+
+        File file;
+
+        try {
+            file = new File(AttysEEG.ATTYSDIR, dataFilename.trim());
+            file.createNewFile();
+            Log.d(TAG,"Saving AEP to "+file.getAbsolutePath());
+            aepdataFileStream = new PrintWriter(file);
+        } catch (java.io.FileNotFoundException e) {
+            throw e;
+        }
+
+        char s = ' ';
+        switch (dataSeparator) {
+            case AttysComm.DATA_SEPARATOR_SPACE:
+                s = ' ';
+                break;
+            case AttysComm.DATA_SEPARATOR_COMMA:
+                s = ',';
+                break;
+            case AttysComm.DATA_SEPARATOR_TAB:
+                s = 9;
+                break;
+        }
+
+        for (int i = 0; i < nSamples; i++) {
+            aepdataFileStream.format("%e%c%e%c\n",
+                    epHistorySeries.getX(i), s,
+                    epHistorySeries.getY(i), s);
+            if (aepdataFileStream.checkError()) {
+                throw new IOException("AEP write error");
+            }
+        }
+
+        aepdataFileStream.close();
+
+        Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        Uri contentUri = Uri.fromFile(file);
+        mediaScanIntent.setData(contentUri);
+        getActivity().sendBroadcast(mediaScanIntent);
+    }
+
+
+    private void saveAEP() {
+
+        final EditText filenameEditText = new EditText(getContext());
+        filenameEditText.setSingleLine(true);
+
+        final int REQUEST_EXTERNAL_STORAGE = 1;
+        String[] PERMISSIONS_STORAGE = {
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+        };
+
+        int permission = ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
+
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                    getActivity(),
+                    PERMISSIONS_STORAGE,
+                    REQUEST_EXTERNAL_STORAGE
+            );
+        }
+
+        filenameEditText.setHint("");
+        filenameEditText.setText(dataFilename);
+
+        new AlertDialog.Builder(getContext())
+                .setTitle("Saving AEP data")
+                .setMessage("Enter the filename of the data textfile")
+                .setView(filenameEditText)
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        dataFilename = filenameEditText.getText().toString();
+                        dataFilename = dataFilename.replaceAll("[^a-zA-Z0-9.-]", "_");
+                        if (!dataFilename.contains(".")) {
+                            switch (dataSeparator) {
+                                case AttysComm.DATA_SEPARATOR_COMMA:
+                                    dataFilename = dataFilename + ".csv";
+                                    break;
+                                case AttysComm.DATA_SEPARATOR_SPACE:
+                                    dataFilename = dataFilename + ".dat";
+                                    break;
+                                case AttysComm.DATA_SEPARATOR_TAB:
+                                    dataFilename = dataFilename + ".tsv";
+                            }
+                        }
+                        try {
+                            writeAEPfile();
+                            Toast.makeText(getActivity(),
+                                    "Successfully written '" + dataFilename + "' to the external memory",
+                                    Toast.LENGTH_SHORT).show();
+                        } catch (IOException e) {
+                            Toast.makeText(getActivity(),
+                                    "Write Error while saving '" + dataFilename + "' to the external memory",
+                                    Toast.LENGTH_SHORT).show();
+                            Log.d(TAG, "Error saving AEP file: ", e);
+                        }
+                        ;
+                    }
+                })
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                    }
+                })
+                .show();
+    }
+
 
     public void tick(long samplenumber) {
         if (!ready) return;

@@ -14,7 +14,7 @@
  * limitations under the License.
  **/
 
-package tech.glasgowneuro.attysep;
+package tech.glasgowneuro.attyseeg;
 
 import android.Manifest;
 import android.app.ProgressDialog;
@@ -67,11 +67,29 @@ import java.util.TimerTask;
 import tech.glasgowneuro.attyscomm.AttysComm;
 import uk.me.berndporr.iirj.Butterworth;
 
-public class AttysEP extends AppCompatActivity {
+public class AttysEEG extends AppCompatActivity {
 
     private Timer timer = null;
     // screen refresh rate
     private final int REFRESH_IN_MS = 50;
+
+    private final float DEFAULT_GAIN = 4000;
+
+    // EEG frequency bands
+    private float betaFlow = 13;
+    private float betaFhigh = 30;
+    private float alphaFlow = 8;
+    private float alphaFhigh = 13;
+    private float thetaFlow = 4;
+    private float thetaFhigh = 8;
+    private float deltaFhigh = 4;
+    private float gammaFlow = 30;
+
+    private boolean showBeta = true;
+    private boolean showAlpha = true;
+    private boolean showTheta = true;
+    private boolean showDelta = true;
+    private boolean showGamma = true;
 
     private RealtimePlotView realtimePlotView = null;
     private InfoView infoView = null;
@@ -80,20 +98,28 @@ public class AttysEP extends AppCompatActivity {
     private BluetoothAdapter BA;
     private AttysComm attysComm = null;
     private BluetoothDevice btAttysDevice = null;
-    private byte samplingRate = AttysComm.ADC_RATE_250HZ;
+    private byte samplingRate = AttysComm.ADC_RATE_500Hz;
 
     UpdatePlotTask updatePlotTask = null;
 
-    private static final String TAG = "AttysEP";
+    private static final String TAG = "AttysEEG";
 
-    private Butterworth highpass_II = null;
-    private float gain = 2000;
-    private Butterworth iirNotch_mains_fundamental = null;
-    private Butterworth iirNotch_mains_1st_harmonic = null;
-    private Butterworth iirNotch_mains_2nd_harmonic = null;
-    private Butterworth iirLP = null;
-    private double notchBW = 5; // Hz
-    private int notchOrder = 4;
+    private Butterworth highpass = null;
+    private float gain = DEFAULT_GAIN;
+    private Butterworth notch_mains_fundamental = null;
+    private Butterworth notch_mains_1st_harmonic = null;
+    private Butterworth notch_mains_2nd_harmonic = null;
+    private Butterworth lowpass = null;
+    private Butterworth betaHighpass = null;
+    private Butterworth betaLowpass = null;
+    private Butterworth deltaLowpass = null;
+    private Butterworth alphaHighpass = null;
+    private Butterworth alphaLowpass = null;
+    private Butterworth thetaHighpass = null;
+    private Butterworth thetaLowpass = null;
+    private Butterworth gammaHighpass = null;
+    private double notchBW = 2.5; // Hz
+    private int notchOrder = 2;
     private float powerlineHz = 50;
 
     private float ytick = 0;
@@ -115,8 +141,9 @@ public class AttysEP extends AppCompatActivity {
     private GoogleApiClient client;
     private Action viewAction;
 
-    private final String ATTYS_SUBDIR = "attys";
-    private File attysdir = null;
+    static final String ATTYS_SUBDIR = "attys";
+    static final File ATTYSDIR =
+            new File(Environment.getExternalStorageDirectory().getPath(), ATTYS_SUBDIR);
 
     ProgressDialog progress = null;
 
@@ -130,9 +157,11 @@ public class AttysEP extends AppCompatActivity {
         private byte data_separator = AttysComm.DATA_SEPARATOR_TAB;
         float samplingInterval = 0;
         float bpm = 0;
+        File file = null;
 
         // starts the recording
-        public java.io.FileNotFoundException startRec(File file) {
+        public java.io.FileNotFoundException startRec(File _file) {
+            file = _file;
             samplingInterval = 1.0F / attysComm.getSamplingRateInHz();
             try {
                 textdataFileStream = new PrintWriter(file);
@@ -153,6 +182,12 @@ public class AttysEP extends AppCompatActivity {
                 messageListener.haveMessage(AttysComm.MESSAGE_STOPPED_RECORDING);
                 textdataFileStream = null;
                 textdataFile = null;
+                if (file != null) {
+                    Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+                    Uri contentUri = Uri.fromFile(file);
+                    mediaScanIntent.setData(contentUri);
+                    sendBroadcast(mediaScanIntent);
+                }
             }
         }
 
@@ -177,7 +212,13 @@ public class AttysEP extends AppCompatActivity {
             bpm = _bpm;
         }
 
-        private void saveData(float data) {
+        private void saveData(float rawEEG,
+                              float filteredEEG,
+                              float delta,
+                              float theta,
+                              float alpha,
+                              float beta,
+                              float gamma) {
 
             if (textdataFileStream == null) return;
 
@@ -194,10 +235,19 @@ public class AttysEP extends AppCompatActivity {
                     break;
             }
             float t = timestamp + samplingInterval;
-            String tmp = String.format("%f%c", t, s);
-            tmp = tmp + String.format("%f%c", data, s);
+            String tmp = String.format("%e%c", t, s);
+            tmp = tmp + String.format("%e%c", rawEEG, s);
+            tmp = tmp + String.format("%e%c", filteredEEG, s);
+            tmp = tmp + String.format("%e%c", delta, s);
+            tmp = tmp + String.format("%e%c", theta, s);
+            tmp = tmp + String.format("%e%c", alpha, s);
+            tmp = tmp + String.format("%e%c", beta, s);
+            tmp = tmp + String.format("%e%c", gamma, s);
             if (textdataFileStream != null) {
                 textdataFileStream.format("%s\n", tmp);
+                if (textdataFileStream != null) {
+                    if (textdataFileStream.checkError()) Log.d(TAG, "Error while saving");
+                }
             }
         }
     }
@@ -316,7 +366,7 @@ public class AttysEP extends AppCompatActivity {
 
         private void annotatePlot() {
             String small = "";
-            small = small + "".format("1 sec/div, %1.01f mV/div", ytick * 1000);
+            small = small + "".format("1 sec/div, %1.02f mV/div", ytick * 1000);
             if (dataRecorder.isRecording()) {
                 small = small + " !!RECORDING to:" + dataFilename;
             }
@@ -350,7 +400,7 @@ public class AttysEP extends AppCompatActivity {
                 String[] tmpLabels = new String[nCh];
 
                 float max = attysComm.getADCFullScaleRange(0) / gain;
-                ytick = 1.0F / gain / 10;
+                ytick = 50E-6F;
                 annotatePlot();
 
                 int n = 0;
@@ -369,32 +419,90 @@ public class AttysEP extends AppCompatActivity {
                             // sample[AttysComm.INDEX_Analogue_channel_2] = (float)ecgDetOut;
                             timestamp++;
 
-                            float II = sample[AttysComm.INDEX_Analogue_channel_1];
-                            II = (float)highpass_II.filter((double)II);
-                            if (iirNotch_mains_fundamental != null) {
-                                II = (float) iirNotch_mains_fundamental.filter((double) II);
+                            double rawEEG = sample[AttysComm.INDEX_Analogue_channel_1];
+                            double filteredEEG = highpass.filter(rawEEG);
+                            if (notch_mains_fundamental != null) {
+                                filteredEEG = notch_mains_fundamental.filter(filteredEEG);
                             }
-                            if (iirNotch_mains_1st_harmonic != null) {
-                                II = (float) iirNotch_mains_1st_harmonic.filter((double) II);
+                            if (notch_mains_1st_harmonic != null) {
+                                filteredEEG = notch_mains_1st_harmonic.filter(filteredEEG);
                             }
-                            if (iirNotch_mains_2nd_harmonic != null) {
-                                II = (float) iirNotch_mains_2nd_harmonic.filter((double) II);
+                            if (notch_mains_2nd_harmonic != null) {
+                                filteredEEG = notch_mains_2nd_harmonic.filter(filteredEEG);
                             }
-                            if (iirLP != null) {
-                                II = (float) iirLP.filter((double) II);
+                            if (lowpass != null) {
+                                filteredEEG = lowpass.filter(filteredEEG);
                             }
 
-                            dataRecorder.saveData(II);
+                            float beta = (float) (betaHighpass.filter(betaLowpass.filter(filteredEEG)));
+                            float alpha = (float) (alphaHighpass.filter(alphaLowpass.filter(filteredEEG)));
+                            float theta = (float) (thetaHighpass.filter(thetaLowpass.filter(filteredEEG)));
+                            float delta = (float) (deltaLowpass.filter(filteredEEG));
+                            float gamma = (float) (gammaHighpass.filter(filteredEEG));
+
+                            dataRecorder.saveData(
+                                    (float) rawEEG,
+                                    (float) filteredEEG,
+                                    beta,
+                                    alpha,
+                                    theta,
+                                    delta,
+                                    gamma);
+
+                            // fragements!
+                            // add your here
                             if (aepPlotFragment != null) {
-                                aepPlotFragment.addValue(II);
+                                aepPlotFragment.addValue((float) filteredEEG);
                             }
 
+                            // now plotting it in the main window
                             int nRealChN = 0;
                             tmpMin[nRealChN] = -max;
                             tmpMax[nRealChN] = max;
                             tmpTick[nRealChN] = ytick;
-                            tmpLabels[nRealChN] = "Ch1";
-                            tmpSample[nRealChN++] = II;
+                            tmpLabels[nRealChN] = "EEG";
+                            tmpSample[nRealChN++] = (float) filteredEEG;
+
+                            if (showGamma) {
+                                tmpMin[nRealChN] = -max;
+                                tmpMax[nRealChN] = max;
+                                tmpTick[nRealChN] = ytick;
+                                tmpLabels[nRealChN] = "Gamma";
+                                tmpSample[nRealChN++] = gamma;
+                            }
+
+                            if (showBeta) {
+                                tmpMin[nRealChN] = -max;
+                                tmpMax[nRealChN] = max;
+                                tmpTick[nRealChN] = ytick;
+                                tmpLabels[nRealChN] = "Beta";
+                                tmpSample[nRealChN++] = beta;
+                            }
+
+                            if (showAlpha) {
+                                tmpMin[nRealChN] = -max;
+                                tmpMax[nRealChN] = max;
+                                tmpTick[nRealChN] = ytick;
+                                tmpLabels[nRealChN] = "Alpha";
+                                tmpSample[nRealChN++] = alpha;
+                            }
+
+                            if (showTheta) {
+                                tmpMin[nRealChN] = -max;
+                                tmpMax[nRealChN] = max;
+                                tmpTick[nRealChN] = ytick;
+                                tmpLabels[nRealChN] = "Theta";
+                                tmpSample[nRealChN++] = theta;
+                            }
+
+                            if (showDelta) {
+                                tmpMin[nRealChN] = -max;
+                                tmpMax[nRealChN] = max;
+                                tmpTick[nRealChN] = ytick;
+                                tmpLabels[nRealChN] = "Delta";
+                                tmpSample[nRealChN++] = delta;
+                            }
+
                             if (infoView != null) {
                                 if (ygapForInfo == 0) {
                                     ygapForInfo = infoView.getInfoHeight();
@@ -447,10 +555,8 @@ public class AttysEP extends AppCompatActivity {
 
         progress = new ProgressDialog(this);
 
-        attysdir = new File(Environment.getExternalStorageDirectory().getPath(),
-                ATTYS_SUBDIR);
-        if (!attysdir.exists()) {
-            attysdir.mkdirs();
+        if (!ATTYSDIR.exists()) {
+            ATTYSDIR.mkdirs();
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
@@ -462,12 +568,20 @@ public class AttysEP extends AppCompatActivity {
         Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
 
-        iirNotch_mains_fundamental = new Butterworth();
-        iirNotch_mains_1st_harmonic = new Butterworth();
-        iirNotch_mains_2nd_harmonic = new Butterworth();
-        iirLP = new Butterworth();
-        highpass_II = new Butterworth();
-        gain = 2000;
+        notch_mains_fundamental = new Butterworth();
+        notch_mains_1st_harmonic = new Butterworth();
+        notch_mains_2nd_harmonic = new Butterworth();
+        lowpass = new Butterworth();
+        highpass = new Butterworth();
+        betaHighpass = new Butterworth();
+        betaLowpass = new Butterworth();
+        alphaHighpass = new Butterworth();
+        alphaLowpass = new Butterworth();
+        thetaHighpass = new Butterworth();
+        thetaLowpass = new Butterworth();
+        deltaLowpass = new Butterworth();
+        gammaHighpass = new Butterworth();
+        gain = DEFAULT_GAIN;
 
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
@@ -511,14 +625,34 @@ public class AttysEP extends AppCompatActivity {
 
         getsetAttysPrefs();
 
-        iirNotch_mains_fundamental.bandStop(notchOrder,
+        attysComm.setAdc_samplingrate_index(samplingRate);
+
+        // mains filter
+        notch_mains_fundamental.bandStop(notchOrder,
                 attysComm.getSamplingRateInHz(), powerlineHz, notchBW);
-        iirNotch_mains_1st_harmonic.bandStop(notchOrder,
-                attysComm.getSamplingRateInHz(), powerlineHz*2, notchBW);
-        iirNotch_mains_2nd_harmonic.bandStop(notchOrder,
-                attysComm.getSamplingRateInHz(), powerlineHz*3, notchBW);
-        iirLP.lowPass(2,attysComm.getSamplingRateInHz(),200);
-        highpass_II.highPass(2,attysComm.getSamplingRateInHz(),10);
+        notch_mains_1st_harmonic.bandStop(notchOrder,
+                attysComm.getSamplingRateInHz(), powerlineHz * 2, notchBW);
+        notch_mains_2nd_harmonic.bandStop(notchOrder,
+                attysComm.getSamplingRateInHz(), powerlineHz * 3, notchBW);
+
+        // general lowpass filter
+        lowpass.lowPass(2, attysComm.getSamplingRateInHz(), 200);
+        highpass.highPass(2, attysComm.getSamplingRateInHz(), 10);
+
+        // for beta waves
+        betaHighpass.highPass(2, attysComm.getSamplingRateInHz(), betaFlow);
+        betaLowpass.lowPass(2, attysComm.getSamplingRateInHz(), betaFhigh);
+
+        // for alpha waves
+        alphaHighpass.highPass(2, attysComm.getSamplingRateInHz(), alphaFlow);
+        alphaLowpass.lowPass(2, attysComm.getSamplingRateInHz(), alphaFhigh);
+
+        // for theta waves
+        thetaHighpass.highPass(2, attysComm.getSamplingRateInHz(), thetaFlow);
+        thetaLowpass.lowPass(2, attysComm.getSamplingRateInHz(), thetaFhigh);
+
+        // for delta waves
+        deltaLowpass.lowPass(2, attysComm.getSamplingRateInHz(), deltaFhigh);
 
         realtimePlotView = (RealtimePlotView) findViewById(R.id.realtimeplotview);
         realtimePlotView.setMaxChannels(15);
@@ -693,7 +827,7 @@ public class AttysEP extends AppCompatActivity {
         }
 
         final List files = new ArrayList();
-        final String[] list = attysdir.list();
+        final String[] list = ATTYSDIR.list();
         for (String file : list) {
             if (files != null) {
                 if (file != null) {
@@ -729,7 +863,7 @@ public class AttysEP extends AppCompatActivity {
                         for (int i = 0; i < listview.getCount(); i++) {
                             if (checked.get(i)) {
                                 String filename = list[i];
-                                File fp = new File(attysdir, filename);
+                                File fp = new File(ATTYSDIR, filename);
                                 files.add(Uri.fromFile(fp));
                                 if (Log.isLoggable(TAG, Log.DEBUG)) {
                                     Log.d(TAG, "filename=" + filename);
@@ -752,7 +886,7 @@ public class AttysEP extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main_menu_attysecg, menu);
+        getMenuInflater().inflate(R.menu.main_menu_attyseeg, menu);
 
         return true;
     }
@@ -770,17 +904,10 @@ public class AttysEP extends AppCompatActivity {
 
             case R.id.toggleRec:
                 if (dataRecorder.isRecording()) {
-                    File file = dataRecorder.getFile();
                     dataRecorder.stopRec();
-                    if (file != null) {
-                        Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-                        Uri contentUri = Uri.fromFile(file);
-                        mediaScanIntent.setData(contentUri);
-                        sendBroadcast(mediaScanIntent);
-                    }
                 } else {
                     if (dataFilename != null) {
-                        File file = new File(attysdir, dataFilename.trim());
+                        File file = new File(ATTYSDIR, dataFilename.trim());
                         dataRecorder.setDataSeparator(dataSeparator);
                         if (file.exists()) {
                             Toast.makeText(getApplicationContext(),
@@ -808,19 +935,44 @@ public class AttysEP extends AppCompatActivity {
                 return true;
 
             case R.id.Ch1gain200:
-                gain = 1000;
+                gain = DEFAULT_GAIN/2;
                 return true;
 
             case R.id.Ch1gain500:
-                gain = 2000;
+                gain = DEFAULT_GAIN;
                 return true;
 
             case R.id.Ch1gain1000:
-                gain = 4000;
+                gain = DEFAULT_GAIN*2;
                 return true;
 
             case R.id.enterFilename:
                 enterFilename();
+                return true;
+
+            case R.id.showBeta:
+                showBeta = !showBeta;
+                item.setChecked(showBeta);
+                return true;
+
+            case R.id.showAlpha:
+                showAlpha = !showAlpha;
+                item.setChecked(showAlpha);
+                return true;
+
+            case R.id.showTheta:
+                showTheta = !showTheta;
+                item.setChecked(showTheta);
+                return true;
+
+            case R.id.showDelta:
+                showDelta = !showDelta;
+                item.setChecked(showDelta);
+                return true;
+
+            case R.id.showGamma:
+                showGamma = !showGamma;
+                item.setChecked(showGamma);
                 return true;
 
             case R.id.plotWindowAEP:
@@ -925,9 +1077,6 @@ public class AttysEP extends AppCompatActivity {
         if (Log.isLoggable(TAG, Log.DEBUG)) {
             Log.d(TAG, "powerline=" + powerlineHz);
         }
-
-        samplingRate = AttysComm.ADC_RATE_500Hz;
-        attysComm.setAdc_samplingrate_index(samplingRate);
     }
 
 }

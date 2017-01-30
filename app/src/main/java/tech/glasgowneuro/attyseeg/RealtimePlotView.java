@@ -14,7 +14,7 @@
  * limitations under the License.
  **/
 
-package tech.glasgowneuro.attysep;
+package tech.glasgowneuro.attyseeg;
 
 import android.content.Context;
 import android.graphics.Canvas;

@@ -1,4 +1,0 @@
-# AttysEP
-
-Evoked potential app
-

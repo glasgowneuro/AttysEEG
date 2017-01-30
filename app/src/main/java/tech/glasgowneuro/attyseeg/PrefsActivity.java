@@ -1,4 +1,4 @@
-package tech.glasgowneuro.attysep;
+package tech.glasgowneuro.attyseeg;
 
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
