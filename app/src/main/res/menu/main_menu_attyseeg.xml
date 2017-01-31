@@ -25,6 +25,9 @@
                     <item
                         android:id="@+id/plotWindowVEP"
                         android:title="VEP" />
+                    <item
+                        android:id="@+id/plotWindowFastSlow"
+                        android:title="EEG power fast/slow" />
                 </menu>
             </item>
 

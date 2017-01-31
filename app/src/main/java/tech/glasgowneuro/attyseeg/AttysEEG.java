@@ -69,8 +69,8 @@ import uk.me.berndporr.iirj.Butterworth;
 
 public class AttysEEG extends AppCompatActivity {
 
-    private Timer timer = null;
-    // screen refresh rate
+    static final String ATTYS_SUBDIR = "attys";
+
     private final int REFRESH_IN_MS = 50;
 
     private final float DEFAULT_GAIN = 4000;
@@ -89,6 +89,18 @@ public class AttysEEG extends AppCompatActivity {
     private float deltaFhigh = 4;
     private float gammaFlow = 30;
 
+    private double notchBW = 2.5; // Hz
+    private int notchOrder = 2;
+
+    // Fragments
+    // add yours here !
+    private AEPFragment aepPlotFragment = null;
+    private VEPFragment vepPlotFragment = null;
+    private FastSlowRatioFragment betaRatioFragment = null;
+
+
+    /////////////////////////////////////////////////////
+    // private stuff from here
     private boolean showBeta = true;
     private boolean showAlpha = true;
     private boolean showTheta = true;
@@ -97,20 +109,19 @@ public class AttysEEG extends AppCompatActivity {
 
     private RealtimePlotView realtimePlotView = null;
     private InfoView infoView = null;
-    private AEPFragment aepPlotFragment = null;
-    private VEPFragment vepPlotFragment = null;
 
     private BluetoothAdapter BA;
     private AttysComm attysComm = null;
     private BluetoothDevice btAttysDevice = null;
     private byte samplingRate = AttysComm.ADC_RATE_500Hz;
 
+    private Timer timer = null;
+
     UpdatePlotTask updatePlotTask = null;
 
     private static final String TAG = "AttysEEG";
 
     private Butterworth highpass = null;
-    private float gain = DEFAULT_GAIN;
     private Butterworth notch_mains_fundamental = null;
     private Butterworth notch_mains_1st_harmonic = null;
     private Butterworth notch_mains_2nd_harmonic = null;
@@ -123,16 +134,13 @@ public class AttysEEG extends AppCompatActivity {
     private Butterworth thetaHighpass = null;
     private Butterworth thetaLowpass = null;
     private Butterworth gammaHighpass = null;
-    private double notchBW = 2.5; // Hz
-    private int notchOrder = 2;
     private float powerlineHz = 50;
+
+    private float gain = DEFAULT_GAIN;
 
     private float ytick = 0;
 
     int ygapForInfo = 0;
-
-    // debugging the ECG detector, commented out for production
-    //double ecgDetOut;
 
     private int timestamp = 0;
 
@@ -146,7 +154,6 @@ public class AttysEEG extends AppCompatActivity {
     private GoogleApiClient client;
     private Action viewAction;
 
-    static final String ATTYS_SUBDIR = "attys";
     static final File ATTYSDIR =
             new File(Environment.getExternalStorageDirectory().getPath(), ATTYS_SUBDIR);
 
@@ -317,6 +324,10 @@ public class AttysEEG extends AppCompatActivity {
     };
 
 
+    // this function is called when a new data sample has
+    // arrived. It's been used by the evoked potential
+    // fragments to generate the stimulus
+    // this is called at the given sampling rate
     AttysComm.DataListener dataListener = new AttysComm.DataListener() {
         @Override
         public void gotData(long samplenumber, float[] data) {
@@ -458,12 +469,15 @@ public class AttysEEG extends AppCompatActivity {
                                     gamma);
 
                             // fragements!
-                            // add your here
+                            // add yours here
                             if (aepPlotFragment != null) {
                                 aepPlotFragment.addValue((float) filteredEEG);
                             }
                             if (vepPlotFragment != null) {
                                 vepPlotFragment.addValue((float) filteredEEG);
+                            }
+                            if (betaRatioFragment != null) {
+                                betaRatioFragment.addValue((float) filteredEEG);
                             }
 
                             // now plotting it in the main window
@@ -536,6 +550,10 @@ public class AttysEEG extends AppCompatActivity {
                     if (realtimePlotView != null) {
                         realtimePlotView.stopAddSamples();
                     }
+
+                    // Fragments!
+                    // add a call here to refresh the plot at the same time the main
+                    // window refreshes
                     if (aepPlotFragment != null) {
                         aepPlotFragment.redraw();
                     }
@@ -762,6 +780,11 @@ public class AttysEEG extends AppCompatActivity {
 
         killAttysComm();
 
+        // Fragments
+        // this stops recording in the fragment
+        // this is especially important for fragements
+        // which generate a stimulus
+        // otherwise they might run in the background
         if (aepPlotFragment != null) {
             aepPlotFragment.stopSweeps();
         }
@@ -999,7 +1022,7 @@ public class AttysEEG extends AppCompatActivity {
 
             case R.id.plotWindowAEP:
 
-                deletePlotWindow();
+                deleteFragmentWindow();
                 // Create a new Fragment to be placed in the activity layout
                 aepPlotFragment = new AEPFragment();
                 aepPlotFragment.setSamplingrate(attysComm.getSamplingRateInHz());
@@ -1017,7 +1040,7 @@ public class AttysEEG extends AppCompatActivity {
 
             case R.id.plotWindowVEP:
 
-                deletePlotWindow();
+                deleteFragmentWindow();
                 // Create a new Fragment to be placed in the activity layout
                 vepPlotFragment = new VEPFragment();
                 vepPlotFragment.setSamplingrate(attysComm.getSamplingRateInHz());
@@ -1033,9 +1056,27 @@ public class AttysEEG extends AppCompatActivity {
                 showPlotFragment();
                 return true;
 
+            case R.id.plotWindowFastSlow:
+
+                deleteFragmentWindow();
+                // Create a new Fragment to be placed in the activity layout
+                betaRatioFragment = new FastSlowRatioFragment();
+                betaRatioFragment.setSamplingrate(attysComm.getSamplingRateInHz());
+                // Add the fragment to the 'fragment_container' FrameLayout
+                if (Log.isLoggable(TAG, Log.DEBUG)) {
+                    Log.d(TAG, "Adding beta ratio fragment");
+                }
+                getSupportFragmentManager().beginTransaction()
+                        .add(R.id.fragment_plot_container,
+                                betaRatioFragment,
+                                "betaRatioFragment")
+                        .commit();
+                showPlotFragment();
+                return true;
+
             case R.id.plotWindowOff:
                 hidePlotFragment();
-                deletePlotWindow();
+                deleteFragmentWindow();
                 return true;
 
             case R.id.filebrowser:
@@ -1072,7 +1113,7 @@ public class AttysEEG extends AppCompatActivity {
     }
 
 
-    private synchronized void deletePlotWindow() {
+    private synchronized void deleteFragmentWindow() {
         List<Fragment> fragments = getSupportFragmentManager().getFragments();
         if (fragments != null) {
             if (!(fragments.isEmpty())) {
@@ -1089,6 +1130,8 @@ public class AttysEEG extends AppCompatActivity {
             }
         }
         aepPlotFragment = null;
+        vepPlotFragment = null;
+        betaRatioFragment = null;
     }
 
 
