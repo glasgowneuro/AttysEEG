@@ -35,7 +35,6 @@ import com.androidplot.xy.XYPlot;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Timer;
 
 import tech.glasgowneuro.attyscomm.AttysComm;
 import uk.me.berndporr.iirj.Butterworth;
@@ -67,11 +66,13 @@ public class AEPFragment extends Fragment {
     View view = null;
 
     // in secs
-    final int SWEEP_DURATION_MS = 501;
+    int sweep_duration_us = 500000;
 
-    int nSamples = 250 / 2;
+    int nSamples = 0;
 
     int samplingRate = 250;
+
+    long samplingInterval_ns = 1;
 
     int index = 0;
 
@@ -83,41 +84,149 @@ public class AEPFragment extends Fragment {
 
     boolean acceptData = false;
 
-    int soundTimer = 1;
-
-    Timer timer = null;
-
     private String dataFilename = null;
 
     private byte dataSeparator = AttysComm.DATA_SEPARATOR_TAB;
 
+    long nanoTime = 0;
+
+    long prev_nano_time = 0;
+
+    long dt_avg = 2000000;
+
+    private final long CONST1E9 = 1000000000;
+
+    int ignoreCtr = 100;
+
     Butterworth highpass;
+
+    class StimulusGenerator implements Runnable {
+
+        long period_nano = 0;
+        boolean doRun = true;
+
+        StimulusGenerator() {
+            initSound();
+        }
+
+        void set_period_ns(long _period_nano) {
+            period_nano = _period_nano;
+        }
+
+        @Override
+        public void run() {
+
+            long t0 = System.nanoTime();
+
+            while (doRun) {
+                doClickSound();
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        doClickSound();
+                    }
+                });
+                while ((t0-System.nanoTime())>0) {
+                    try {
+                        Thread.sleep(0,(int)(0.5E9));
+                    } catch (Exception e) {
+                    }
+                }
+                t0 = t0 + period_nano;
+            }
+        }
+
+        public synchronized void cancel() {
+            doRun = false;
+            sound.release();
+        }
+
+        // audio
+        private AudioTrack sound;
+        private byte[] rawAudio;
+        int audioSamplingRate = 44100;
+        int clickduration = audioSamplingRate / 1000; // 1ms
+        int nAudioSamples = clickduration * 3;
+
+        public void initSound() {
+            sound = new AudioTrack(AudioManager.STREAM_MUSIC,
+                    audioSamplingRate,
+                    AudioFormat.CHANNEL_OUT_MONO,
+                    AudioFormat.ENCODING_PCM_8BIT,
+                    nAudioSamples,
+                    AudioTrack.MODE_STATIC);
+            rawAudio = new byte[nAudioSamples];
+            for (int i = 0; i < nAudioSamples; i++) {
+                rawAudio[i] = (byte) 0x80;
+            }
+            for (int i = 0; i < clickduration; i++) {
+                rawAudio[i] = (byte) 0x00;
+                rawAudio[i + clickduration] = (byte) 0xff;
+            }
+            sound.write(rawAudio, 0, rawAudio.length);
+        }
+
+
+        public synchronized void doClickSound() {
+            switch (sound.getPlayState()) {
+                case AudioTrack.PLAYSTATE_PAUSED:
+                    sound.stop();
+                    sound.reloadStaticData();
+                    sound.reloadStaticData();
+                    sound.play();
+                    break;
+                case AudioTrack.PLAYSTATE_PLAYING:
+                    sound.stop();
+                    sound.reloadStaticData();
+                    sound.play();
+                    break;
+                case AudioTrack.PLAYSTATE_STOPPED:
+                    sound.reloadStaticData();
+                    sound.play();
+                    break;
+                default:
+                    break;
+            }
+        }
+
+    }
+
+
+    StimulusGenerator stimulusGenerator;
+    Thread stimulusThread;
+
 
     public void setSamplingrate(int _samplingrate) {
         samplingRate = _samplingrate;
+        samplingInterval_ns = CONST1E9 / _samplingrate;
+        dt_avg = samplingInterval_ns;
     }
 
-    private void resetSoundTimer() {
-        soundTimer = SWEEP_DURATION_MS / (1000 / samplingRate);
+    public void startSweeps() {
+        acceptData = true;
+        doSweeps = true;
+        acceptData = true;
+        stimulusGenerator = new StimulusGenerator();
+        stimulusGenerator.set_period_ns(sweep_duration_us*1000);
+        stimulusThread = new Thread(stimulusGenerator);
+        stimulusThread.start();
     }
 
     public void stopSweeps() {
-        if (timer != null) {
-            timer.cancel();
+        if (stimulusGenerator != null) {
+            stimulusGenerator.cancel();
         }
         if (toggleButtonDoSweep != null) {
             toggleButtonDoSweep.setChecked(false);
         }
-        timer = null;
         doSweeps = false;
         acceptData = false;
     }
 
     private void reset() {
         ready = false;
-        highpass.highPass(2,samplingRate,highpassFreq);
-        nSamples = (int) (samplingRate * SWEEP_DURATION_MS / 1000);
-        resetSoundTimer();
+        highpass.highPass(2, samplingRate, highpassFreq);
+        nSamples = (int) (samplingRate * sweep_duration_us / 1000000);
         float tmax = nSamples * (1.0F / ((float) samplingRate));
         //aepPlot.setRangeBoundaries(-10, 10, BoundaryMode.FIXED);
         aepPlot.setDomainBoundaries(0, tmax * 1000, BoundaryMode.FIXED);
@@ -145,60 +254,13 @@ public class AEPFragment extends Fragment {
             aepPlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 100);
         }
 
-        initSound();
+        stimulusGenerator = new StimulusGenerator();
+
+        nanoTime = System.nanoTime() + samplingInterval_ns;
+        prev_nano_time = System.nanoTime();
+        ignoreCtr = 100;
 
         ready = true;
-    }
-
-
-    private AudioTrack sound;
-    private byte[] rawAudio;
-    int audioSamplingRate = 44100;
-    int clickduration = audioSamplingRate / 1000; // 1ms
-    int nAudioSamples = clickduration * 3;
-
-    public void initSound() {
-        sound = new AudioTrack(AudioManager.STREAM_MUSIC,
-                audioSamplingRate,
-                AudioFormat.CHANNEL_OUT_MONO,
-                AudioFormat.ENCODING_PCM_8BIT,
-                nAudioSamples,
-                AudioTrack.MODE_STATIC);
-        rawAudio = new byte[nAudioSamples];
-        for (int i = 0; i < nAudioSamples; i++) {
-            rawAudio[i] = (byte) 0x80;
-        }
-        for (int i = 0; i < clickduration; i++) {
-            rawAudio[i] = (byte) 0x00;
-            rawAudio[i + clickduration] = (byte) 0xff;
-        }
-        sound.write(rawAudio, 0, rawAudio.length);
-    }
-
-
-    private class ClickSoundTimer implements Runnable {
-
-        @Override
-        public synchronized void run() {
-            switch (sound.getPlayState()) {
-                case AudioTrack.PLAYSTATE_PAUSED:
-                    sound.stop();
-                    sound.reloadStaticData();
-                    sound.play();
-                    break;
-                case AudioTrack.PLAYSTATE_PLAYING:
-                    sound.stop();
-                    sound.reloadStaticData();
-                    sound.play();
-                    break;
-                case AudioTrack.PLAYSTATE_STOPPED:
-                    sound.reloadStaticData();
-                    sound.play();
-                    break;
-                default:
-                    break;
-            }
-        }
     }
 
 
@@ -236,9 +298,10 @@ public class AEPFragment extends Fragment {
         toggleButtonDoSweep.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
-                    acceptData = true;
+                    startSweeps();
+                } else {
+                    stopSweeps();
                 }
-                doSweeps = isChecked;
             }
         });
         resetButton = (Button) view.findViewById(R.id.aepReset);
@@ -254,7 +317,6 @@ public class AEPFragment extends Fragment {
             }
         });
 
-
         epHistorySeries = new SimpleXYSeries("AEP/uV");
         if (epHistorySeries == null) {
             if (Log.isLoggable(TAG, Log.ERROR)) {
@@ -267,10 +329,24 @@ public class AEPFragment extends Fragment {
         aepPlot.getGraph().setDomainGridLinePaint(paint);
         aepPlot.getGraph().setRangeGridLinePaint(paint);
 
+
         reset();
 
         return view;
 
+    }
+
+
+    public void tick() {
+        prev_nano_time = nanoTime;
+        nanoTime = System.nanoTime();
+        long dt_real = nanoTime - prev_nano_time;
+        if (ignoreCtr > 0) {
+            ignoreCtr--;
+            return;
+        }
+        dt_avg = dt_avg + ((dt_real - dt_avg) / samplingRate / 100);
+        stimulusGenerator.set_period_ns(dt_avg * nSamples);
     }
 
 
@@ -285,7 +361,7 @@ public class AEPFragment extends Fragment {
         try {
             file = new File(AttysEEG.ATTYSDIR, dataFilename.trim());
             file.createNewFile();
-            Log.d(TAG,"Saving AEP to "+file.getAbsolutePath());
+            Log.d(TAG, "Saving AEP to " + file.getAbsolutePath());
             aepdataFileStream = new PrintWriter(file);
         } catch (java.io.FileNotFoundException e) {
             throw e;
@@ -387,40 +463,11 @@ public class AEPFragment extends Fragment {
     }
 
 
-    public void tick(long samplenumber) {
-        if (!ready) return;
-        if (!acceptData) return;
-        soundTimer--;
-        if (soundTimer == 0) {
-//            Log.v(TAG,"Starting sweep at: "+samplenumber);
-            if (doSweeps) {
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (sweepNoText != null) {
-                                sweepNoText.setText(String.format("%04d sweeps", nSweeps));
-                            }
-                        }
-                    });
-                }
-                new Thread(new ClickSoundTimer()).start();
-                nSweeps++;
-            } else {
-                acceptData = false;
-            }
-            resetSoundTimer();
-            index = 0;
-        }
-    }
-
     public synchronized void addValue(final float v) {
 
         if (!ready) return;
 
         if (!acceptData) return;
-
-        if (index >= nSamples) return;
 
         if (epHistorySeries == null) {
             if (Log.isLoggable(TAG, Log.VERBOSE)) {
@@ -439,6 +486,21 @@ public class AEPFragment extends Fragment {
             epHistorySeries.setY(avg, index);
         }
         index++;
+        if (index == nSamples) {
+            nSweeps++;
+            index = 0;
+
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (sweepNoText != null) {
+                            sweepNoText.setText(String.format("%04d sweeps", nSweeps));
+                        }
+                    }
+                });
+            }
+        }
     }
 
     public void redraw() {

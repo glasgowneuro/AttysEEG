@@ -265,7 +265,19 @@ public class AttysEEG extends AppCompatActivity {
         }
     }
 
-    DataRecorder dataRecorder = new DataRecorder();
+
+
+    AttysComm.DataListener dataListener = new AttysComm.DataListener() {
+        @Override
+        public void gotData(long l, float[] f) {
+            if (aepPlotFragment != null) {
+                aepPlotFragment.tick();
+            }
+        }
+    };
+
+
+            DataRecorder dataRecorder = new DataRecorder();
 
     Handler handler = new Handler() {
         @Override
@@ -321,23 +333,6 @@ public class AttysEEG extends AppCompatActivity {
         @Override
         public void haveMessage(int msg) {
             handler.sendEmptyMessage(msg);
-        }
-    };
-
-
-    // this function is called when a new data sample has
-    // arrived. It's been used by the evoked potential
-    // fragments to generate the stimulus
-    // this is called at the given sampling rate
-    AttysComm.DataListener dataListener = new AttysComm.DataListener() {
-        @Override
-        public void gotData(long samplenumber, float[] data) {
-            if (aepPlotFragment != null) {
-                aepPlotFragment.tick(samplenumber);
-            }
-            if (vepPlotFragment != null) {
-                vepPlotFragment.tick(samplenumber);
-            }
         }
     };
 
