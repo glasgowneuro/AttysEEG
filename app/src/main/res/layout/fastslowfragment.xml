@@ -2,6 +2,7 @@
 
 <android.support.percent.PercentFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:local="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent">
 
@@ -35,7 +36,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
-                android:layout_weight="2"
+                android:layout_weight="0.5"
                 android:gravity="end"
                 android:text=" " />
 
@@ -48,14 +49,29 @@
 
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/fastslow_valueTextView"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="end"
-            android:text=""
-            android:textColor="#00FFFF"
-            android:textSize="36sp" />
+            android:layout_height="wrap_content">
+
+            <Spinner
+                android:id="@+id/fastSlow_mode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:spinnerMode="dropdown"
+                android:layout_gravity="start"
+                />
+
+            <TextView
+                android:id="@+id/fastslow_valueTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:text=""
+                android:textColor="#00FFFF"
+                android:textSize="48sp" />
+
+        </LinearLayout>
 
         <com.androidplot.xy.XYPlot
             android:id="@+id/fastslowPlotView"
@@ -66,7 +82,7 @@
             ap:lineLabelRotationBottom="-45"
             ap:lineLabels="left|bottom"
             ap:rangeTitle="range"
-            ap:title="log(fast/slow power)" />
+            ap:title="  " />
 
     </LinearLayout>
 

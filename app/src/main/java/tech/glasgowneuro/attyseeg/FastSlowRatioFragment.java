@@ -16,14 +16,16 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
-import com.androidplot.xy.BoundaryMode;
 import com.androidplot.xy.LineAndPointFormatter;
 import com.androidplot.xy.SimpleXYSeries;
 import com.androidplot.xy.StepMode;
@@ -49,10 +51,29 @@ public class FastSlowRatioFragment extends Fragment {
 
     String title = "log(Power of Fast/Slow)";
 
-    float bandLow = 40;
-    float bandHigh = 200;
-    float allLow = 10;
-    float allHigh = 47;
+    public static final String[] string_fastslow_modes = {
+            "FastSlow",
+            "BetaRatio"
+    };
+
+    int mode = 0;
+
+    float bandLow[] = {
+            40,     // fast/slow
+            30      // beta ratio
+    };
+    float bandHigh[] = {
+            100,    // flast/slow
+            47      // beta ratio
+    };
+    float allLow[] = {
+            1,      // fast/slow
+            11      // beta ratio
+    };
+    float allHigh[] = {
+            47,     // fast/slow
+            20      // beta ratio
+    };
     float smoothFreq = 0.1F;
 
     final int nSampleBufferSize = 100;
@@ -62,6 +83,7 @@ public class FastSlowRatioFragment extends Fragment {
     double fastSlowRatio = 0;
 
     private SimpleXYSeries fastSlowHistorySeries = null;
+    private SimpleXYSeries fastSlowFullSeries = null;
 
     private XYPlot fastSlowPlot = null;
 
@@ -73,14 +95,16 @@ public class FastSlowRatioFragment extends Fragment {
 
     private Button saveButton;
 
+    private Spinner spinnerMode;
+
     View view = null;
 
     Butterworth highpassFilterEEGband = null;
     Butterworth lowpassFilterEEGband = null;
     Butterworth highpassfilterEEGall = null;
     Butterworth lowpassFilterEEGall = null;
-    Bessel smoothBand = null;
-    Bessel smoothAll = null;
+    Butterworth smoothBand = null;
+    Butterworth smoothAll = null;
 
     int samplingRate = 250;
 
@@ -118,48 +142,32 @@ public class FastSlowRatioFragment extends Fragment {
 
         step = 0;
 
-        highpassFilterEEGband = new Butterworth();
-        lowpassFilterEEGband = new Butterworth();
-        highpassfilterEEGall = new Butterworth();
-        lowpassFilterEEGall = new Butterworth();
-        smoothBand = new Bessel();
-        smoothAll = new Bessel();
-
-        highpassFilterEEGband.highPass(2, samplingRate, bandLow);
-        lowpassFilterEEGband.lowPass(2, samplingRate, bandHigh);
-        highpassfilterEEGall.highPass(2, samplingRate, allLow);
-        lowpassFilterEEGall.lowPass(2, samplingRate, allHigh);
-        smoothBand.lowPass(2, samplingRate, smoothFreq);
-        smoothAll.lowPass(2, samplingRate, smoothFreq);
-
-        fastSlowPlot.addSeries(fastSlowHistorySeries,
-                new LineAndPointFormatter(
-                        Color.rgb(100, 255, 255), null, null, null));
-
-        fastSlowPlot.setDomainLabel("t/sec");
-        fastSlowPlot.setRangeLabel("");
-
-        DisplayMetrics metrics = new DisplayMetrics();
-        getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        int width = metrics.widthPixels;
-        int height = metrics.heightPixels;
-
-        if ((height > 1000) && (width > 1000)) {
-            fastSlowPlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 10);
-        } else {
-            fastSlowPlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 30);
-        }
-
-        ready = true;
-    }
-
-
-    private void resetPlot() {
-        step = 0;
         int n = fastSlowHistorySeries.size();
         for (int i = 0; i < n; i++) {
             fastSlowHistorySeries.removeLast();
         }
+        fastSlowFullSeries = new SimpleXYSeries("");
+
+        fastSlowHistorySeries.setTitle(string_fastslow_modes[mode]);
+        fastSlowPlot.setTitle(string_fastslow_modes[mode]);
+
+        fastSlowPlot.redraw();
+
+        highpassFilterEEGband = new Butterworth();
+        lowpassFilterEEGband = new Butterworth();
+        highpassfilterEEGall = new Butterworth();
+        lowpassFilterEEGall = new Butterworth();
+        smoothBand = new Butterworth();
+        smoothAll = new Butterworth();
+
+        highpassFilterEEGband.highPass(2, samplingRate, bandLow[mode]);
+        lowpassFilterEEGband.lowPass(2, samplingRate, bandHigh[mode]);
+        highpassfilterEEGall.highPass(2, samplingRate, allLow[mode]);
+        lowpassFilterEEGall.lowPass(2, samplingRate, allHigh[mode]);
+        smoothBand.lowPass(2, samplingRate, smoothFreq);
+        smoothAll.lowPass(2, samplingRate, smoothFreq);
+
+        ready = true;
     }
 
 
@@ -187,18 +195,20 @@ public class FastSlowRatioFragment extends Fragment {
         toggleButtonDoRecord.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
-                    resetPlot();
                     acceptData = true;
                     timer = new Timer();
                     UpdatePlotTask updatePlotTask = new UpdatePlotTask();
                     timer.schedule(updatePlotTask, 0, REFRESH_IN_MS);
+                } else {
+                    acceptData = false;
+                    timer.cancel();
                 }
             }
         });
         resetButton = (Button) view.findViewById(R.id.fastSlowReset);
         resetButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                resetPlot();
+                reset();
             }
         });
         saveButton = (Button) view.findViewById(R.id.fastSlowSave);
@@ -207,20 +217,60 @@ public class FastSlowRatioFragment extends Fragment {
                 saveBetaRatio();
             }
         });
+        spinnerMode = (Spinner) view.findViewById(R.id.fastSlow_mode);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(),
+                android.R.layout.simple_spinner_dropdown_item,
+                string_fastslow_modes);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerMode.setAdapter(adapter);
+        spinnerMode.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (mode != position) {
+                    Toast.makeText(getActivity(),
+                            "Press RESET to confirm to record " + string_fastslow_modes[mode],
+                            Toast.LENGTH_SHORT).show();
+                }
+                mode = position;
+            }
 
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+        spinnerMode.setBackgroundResource(android.R.drawable.btn_default);
 
-        fastSlowHistorySeries = new SimpleXYSeries(title);
+        fastSlowHistorySeries = new SimpleXYSeries("log(ratio)");
         if (fastSlowHistorySeries == null) {
             if (Log.isLoggable(TAG, Log.ERROR)) {
                 Log.e(TAG, "fastSlowHistorySeries == null");
             }
         }
-        // fastSlowPlot.setDomainBoundaries(0,(double)nSampleBufferSize,BoundaryMode.FIXED);
 
         Paint paint = new Paint();
         paint.setColor(Color.argb(128, 0, 255, 0));
         fastSlowPlot.getGraph().setDomainGridLinePaint(paint);
         fastSlowPlot.getGraph().setRangeGridLinePaint(paint);
+
+        fastSlowPlot.addSeries(fastSlowHistorySeries,
+                new LineAndPointFormatter(
+                        Color.rgb(100, 255, 255), null, null, null));
+
+        fastSlowPlot.setDomainLabel("t/sec");
+        fastSlowPlot.setRangeLabel("");
+
+        DisplayMetrics metrics = new DisplayMetrics();
+        getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
+        int width = metrics.widthPixels;
+        int height = metrics.heightPixels;
+
+        if ((height > 1000) && (width > 1000)) {
+            fastSlowPlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 10);
+        } else {
+            fastSlowPlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 30);
+        }
+
+        fastSlowHistorySeries.setTitle(string_fastslow_modes[mode]);
 
         reset();
 
@@ -229,7 +279,7 @@ public class FastSlowRatioFragment extends Fragment {
     }
 
 
-    private void writeBetaRatiofile() throws IOException {
+    private void writeSlowFastRatiofile() throws IOException {
 
         PrintWriter aepdataFileStream;
 
@@ -259,10 +309,10 @@ public class FastSlowRatioFragment extends Fragment {
                 break;
         }
 
-        for (int i = 0; i < fastSlowHistorySeries.size(); i++) {
+        for (int i = 0; i < fastSlowFullSeries.size(); i++) {
             aepdataFileStream.format("%e%c%e%c\n",
-                    fastSlowHistorySeries.getX(i), s,
-                    fastSlowHistorySeries.getY(i), s);
+                    fastSlowFullSeries.getX(i), s,
+                    fastSlowFullSeries.getY(i), s);
             if (aepdataFileStream.checkError()) {
                 throw new IOException("file write error");
             }
@@ -321,7 +371,7 @@ public class FastSlowRatioFragment extends Fragment {
                             }
                         }
                         try {
-                            writeBetaRatiofile();
+                            writeSlowFastRatiofile();
                             Toast.makeText(getActivity(),
                                     "Successfully written '" + dataFilename + "' to the external memory",
                                     Toast.LENGTH_SHORT).show();
@@ -352,7 +402,7 @@ public class FastSlowRatioFragment extends Fragment {
         all = all * all;
         all = smoothAll.filter(all);
         if (all < 0) all = 0;
-        if ((all != 0) && (band != 0)){
+        if ((all != 0) && (band != 0)) {
             fastSlowRatio = Math.log10(band / all);
         }
     }
@@ -390,14 +440,15 @@ public class FastSlowRatioFragment extends Fragment {
             }
 
             int n = nSampleBufferSize - fastSlowHistorySeries.size();
-            for(int i=0;i<n;i++) {
+            for (int i = 0; i < n; i++) {
                 // add the latest history sample:
-                fastSlowHistorySeries.addLast(step*delta_t, fastSlowRatio);
+                fastSlowHistorySeries.addLast(step * delta_t, fastSlowRatio);
                 step++;
             }
 
             // add the latest history sample:
-            fastSlowHistorySeries.addLast(step*delta_t, fastSlowRatio);
+            fastSlowHistorySeries.addLast(step * delta_t, fastSlowRatio);
+            fastSlowFullSeries.addLast(step * delta_t, fastSlowRatio);
             step++;
             //Log.v(TAG, "fastSlowRatio=" + fastSlowRatio);
             //Log.v(TAG, "size="+fastSlowHistorySeries.size());

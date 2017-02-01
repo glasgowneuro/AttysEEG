@@ -43,6 +43,7 @@ import android.util.SparseBooleanArray;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
@@ -585,6 +586,8 @@ public class AttysEEG extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
         progress = new ProgressDialog(this);
 
         if (!ATTYSDIR.exists()) {
@@ -600,10 +603,6 @@ public class AttysEEG extends AppCompatActivity {
         Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
 
-        notch_mains_fundamental = new Butterworth();
-        notch_mains_1st_harmonic = new Butterworth();
-        notch_mains_2nd_harmonic = new Butterworth();
-        lowpass = new Butterworth();
         highpass = new Butterworth();
         betaHighpass = new Butterworth();
         betaLowpass = new Butterworth();
@@ -660,15 +659,31 @@ public class AttysEEG extends AppCompatActivity {
         attysComm.setAdc_samplingrate_index(samplingRate);
 
         // mains filter
+        notch_mains_fundamental = new Butterworth();
         notch_mains_fundamental.bandStop(notchOrder,
                 attysComm.getSamplingRateInHz(), powerlineHz, notchBW);
-        notch_mains_1st_harmonic.bandStop(notchOrder,
-                attysComm.getSamplingRateInHz(), powerlineHz * 2, notchBW);
-        notch_mains_2nd_harmonic.bandStop(notchOrder,
-                attysComm.getSamplingRateInHz(), powerlineHz * 3, notchBW);
+        if ((powerlineHz*2) < (samplingRate/2)) {
+            notch_mains_1st_harmonic = new Butterworth();
+            notch_mains_1st_harmonic.bandStop(notchOrder,
+                    attysComm.getSamplingRateInHz(), powerlineHz * 2, notchBW);
+        } else {
+            notch_mains_1st_harmonic = null;
+        }
+        if ((powerlineHz*3) < (samplingRate/2)) {
+            notch_mains_2nd_harmonic = new Butterworth();
+            notch_mains_2nd_harmonic.bandStop(notchOrder,
+                    attysComm.getSamplingRateInHz(), powerlineHz * 3, notchBW);
+        }  else {
+            notch_mains_2nd_harmonic = null;
+        }
 
         // general lowpass filter
-        lowpass.lowPass(2, attysComm.getSamplingRateInHz(), allChLowpassF);
+        if (allChLowpassF < (samplingRate/2)) {
+            lowpass = new Butterworth();
+            lowpass.lowPass(2, attysComm.getSamplingRateInHz(), allChLowpassF);
+        } else {
+            lowpass = null;
+        }
 
         // highpass filter
         highpass.highPass(2, attysComm.getSamplingRateInHz(), allChHighpassF);
@@ -980,7 +995,7 @@ public class AttysEEG extends AppCompatActivity {
                 return true;
 
             case R.id.Ch1gain200:
-                gain = DEFAULT_GAIN/2;
+                gain = DEFAULT_GAIN / 2;
                 return true;
 
             case R.id.Ch1gain500:
@@ -988,7 +1003,7 @@ public class AttysEEG extends AppCompatActivity {
                 return true;
 
             case R.id.Ch1gain1000:
-                gain = DEFAULT_GAIN*2;
+                gain = DEFAULT_GAIN * 2;
                 return true;
 
             case R.id.enterFilename:
@@ -1160,6 +1175,9 @@ public class AttysEEG extends AppCompatActivity {
         if (Log.isLoggable(TAG, Log.DEBUG)) {
             Log.d(TAG, "powerline=" + powerlineHz);
         }
+
+        samplingRate = (byte) Integer.parseInt(prefs.getString("samplingrate", "0"));
+        attysComm.setAdc_samplingrate_index(samplingRate);
     }
 
 }
