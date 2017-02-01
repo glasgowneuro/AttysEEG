@@ -1,11 +1,13 @@
 package tech.glasgowneuro.attyseeg;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.hardware.camera2.CameraManager;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -19,9 +21,12 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
@@ -39,21 +44,29 @@ import java.io.PrintWriter;
 import tech.glasgowneuro.attyscomm.AttysComm;
 import uk.me.berndporr.iirj.Butterworth;
 
+import static java.lang.Thread.yield;
+
 /**
- * Created by Bernd Porr on 20/01/17.
- * <p>
- * Heartrate Plot
+ * Evoked potentials Fragment
  */
 
-public class AEPFragment extends Fragment {
+public class EPFragment extends Fragment {
 
-    String TAG = "AEPFragment";
+    String TAG = "EPFragment";
 
-    final float highpassFreq = 10;
+    public static final String[] string_ep_modes = {
+            "VEP",
+            "AEP"
+    };
+
+    final float[] highpassFreq = {
+            1, // VEP
+            10 // VEP
+    };
 
     private SimpleXYSeries epHistorySeries = null;
 
-    private XYPlot aepPlot = null;
+    private XYPlot epPlot = null;
 
     private TextView sweepNoText = null;
 
@@ -66,7 +79,7 @@ public class AEPFragment extends Fragment {
     View view = null;
 
     // in secs
-    int sweep_duration_us = 500000;
+    int sweep_duration_us = 400000;
 
     int nSamples = 0;
 
@@ -92,13 +105,19 @@ public class AEPFragment extends Fragment {
 
     long prev_nano_time = 0;
 
-    long dt_avg = 2000000;
+    long dt_avg = sweep_duration_us * 1000;
 
     private final long CONST1E9 = 1000000000;
 
     int ignoreCtr = 100;
 
     Butterworth highpass;
+
+    private Spinner spinnerMode;
+
+    int mode = 0;
+
+    int spinner_mode = 0;
 
     class StimulusGenerator implements Runnable {
 
@@ -107,6 +126,7 @@ public class AEPFragment extends Fragment {
 
         StimulusGenerator() {
             initSound();
+            initFlash();
         }
 
         void set_period_ns(long _period_nano) {
@@ -119,18 +139,22 @@ public class AEPFragment extends Fragment {
             long t0 = System.nanoTime();
 
             while (doRun) {
-                doClickSound();
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        doClickSound();
+                        switch (mode) {
+                            case 0:
+                                doFlash();
+                                break;
+                            case 1:
+                                doClickSound();
+                                break;
+                        }
                     }
-                });
-                while ((t0-System.nanoTime())>0) {
-                    try {
-                        Thread.sleep(0,(int)(0.5E9));
-                    } catch (Exception e) {
-                    }
+                }).start();
+                Log.d(TAG, "period_nano=" + period_nano);
+                while ((t0 - System.nanoTime()) > 0) {
+                    yield();
                 }
                 t0 = t0 + period_nano;
             }
@@ -155,6 +179,7 @@ public class AEPFragment extends Fragment {
                     AudioFormat.ENCODING_PCM_8BIT,
                     nAudioSamples,
                     AudioTrack.MODE_STATIC);
+            if (sound == null) return;
             rawAudio = new byte[nAudioSamples];
             for (int i = 0; i < nAudioSamples; i++) {
                 rawAudio[i] = (byte) 0x80;
@@ -166,6 +191,29 @@ public class AEPFragment extends Fragment {
             sound.write(rawAudio, 0, rawAudio.length);
         }
 
+        CameraManager cameraManager = null;
+        String cameraId = null;
+
+        public void initFlash() {
+            cameraManager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
+            try {
+                cameraId = cameraManager.getCameraIdList()[0];
+            } catch (Exception e) {
+                Log.d(TAG, "Could not find any flash");
+                cameraManager = null;
+            }
+        }
+
+        public synchronized void doFlash() {
+            if (cameraManager == null) return;
+            try {
+                cameraManager.setTorchMode(cameraId, true);
+                Thread.sleep(50, 0);
+                cameraManager.setTorchMode(cameraId, false);
+            } catch (Exception e) {
+                Log.d(TAG, "Could not switch on flash");
+            }
+        }
 
         public synchronized void doClickSound() {
             switch (sound.getPlayState()) {
@@ -203,12 +251,13 @@ public class AEPFragment extends Fragment {
     }
 
     public void startSweeps() {
+        index = 0;
+        nSweeps = 1;
+        stimulusGenerator = new StimulusGenerator();
+        stimulusGenerator.set_period_ns(sweep_duration_us * 1000);
+        stimulusThread = new Thread(stimulusGenerator);
         acceptData = true;
         doSweeps = true;
-        acceptData = true;
-        stimulusGenerator = new StimulusGenerator();
-        stimulusGenerator.set_period_ns(sweep_duration_us*1000);
-        stimulusThread = new Thread(stimulusGenerator);
         stimulusThread.start();
     }
 
@@ -216,6 +265,7 @@ public class AEPFragment extends Fragment {
         if (stimulusGenerator != null) {
             stimulusGenerator.cancel();
         }
+        stimulusGenerator = null;
         if (toggleButtonDoSweep != null) {
             toggleButtonDoSweep.setChecked(false);
         }
@@ -225,17 +275,15 @@ public class AEPFragment extends Fragment {
 
     private void reset() {
         ready = false;
-        highpass.highPass(2, samplingRate, highpassFreq);
+
+        stopSweeps();
+
+        resetEP();
+        highpass = new Butterworth();
+        highpass.highPass(2, samplingRate, highpassFreq[mode]);
         nSamples = (int) (samplingRate * sweep_duration_us / 1000000);
         float tmax = nSamples * (1.0F / ((float) samplingRate));
-        //aepPlot.setRangeBoundaries(-10, 10, BoundaryMode.FIXED);
-        aepPlot.setDomainBoundaries(0, tmax * 1000, BoundaryMode.FIXED);
-
-        aepPlot.addSeries(epHistorySeries,
-                new LineAndPointFormatter(
-                        Color.rgb(100, 255, 255), null, null, null));
-        aepPlot.setDomainLabel("t/msec");
-        aepPlot.setRangeLabel("");
+        epPlot.setDomainBoundaries(0, tmax * 1000, BoundaryMode.FIXED);
 
         for (int i = 0; i < nSamples; i++) {
             epHistorySeries.addLast(1000.0F * (float) i * (1.0F / ((float) samplingRate)), 0.0);
@@ -249,9 +297,9 @@ public class AEPFragment extends Fragment {
         int width = metrics.widthPixels;
         int height = metrics.heightPixels;
         if ((height > 1000) && (width > 1000)) {
-            aepPlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 50);
+            epPlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 50);
         } else {
-            aepPlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 100);
+            epPlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 100);
         }
 
         stimulusGenerator = new StimulusGenerator();
@@ -260,11 +308,14 @@ public class AEPFragment extends Fragment {
         prev_nano_time = System.nanoTime();
         ignoreCtr = 100;
 
+        epPlot.setTitle(string_ep_modes[mode]);
+        epHistorySeries.setTitle(string_ep_modes[mode]+"/uV");
+
         ready = true;
     }
 
 
-    private void resetAEP() {
+    private void resetEP() {
         for (int i = 0; i < nSamples; i++) {
             epHistorySeries.setY(0, i);
         }
@@ -286,12 +337,10 @@ public class AEPFragment extends Fragment {
             return null;
         }
 
-        highpass = new Butterworth();
-
-        view = inflater.inflate(R.layout.eapfragment, container, false);
+        view = inflater.inflate(R.layout.epfragment, container, false);
 
         // setup the APR Levels plot:
-        aepPlot = (XYPlot) view.findViewById(R.id.bpmPlotView);
+        epPlot = (XYPlot) view.findViewById(R.id.bpmPlotView);
         sweepNoText = (TextView) view.findViewById(R.id.nsweepsTextView);
         sweepNoText.setText(String.format("%04d sweeps", 0));
         toggleButtonDoSweep = (ToggleButton) view.findViewById(R.id.doSweeps);
@@ -307,27 +356,57 @@ public class AEPFragment extends Fragment {
         resetButton = (Button) view.findViewById(R.id.aepReset);
         resetButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                resetAEP();
+                mode = spinner_mode;
+                reset();
             }
         });
         saveButton = (Button) view.findViewById(R.id.aepSave);
         saveButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                saveAEP();
+                saveEP();
             }
         });
 
-        epHistorySeries = new SimpleXYSeries("AEP/uV");
+        spinnerMode = (Spinner) view.findViewById(R.id.ep_mode);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(),
+                android.R.layout.simple_spinner_dropdown_item,
+                string_ep_modes);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerMode.setAdapter(adapter);
+        spinnerMode.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (mode != position) {
+                    Toast.makeText(getActivity(),
+                            "Press RESET to confirm to switch to " + string_ep_modes[position],
+                            Toast.LENGTH_SHORT).show();
+                }
+                spinner_mode = position;
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+        spinnerMode.setBackgroundResource(android.R.drawable.btn_default);
+
+        epHistorySeries = new SimpleXYSeries(" ");
         if (epHistorySeries == null) {
             if (Log.isLoggable(TAG, Log.ERROR)) {
                 Log.e(TAG, "epHistorySeries == null");
             }
         }
 
+        epPlot.addSeries(epHistorySeries,
+                new LineAndPointFormatter(
+                        Color.rgb(100, 255, 255), null, null, null));
+        epPlot.setDomainLabel("t/msec");
+        epPlot.setRangeLabel("");
+
         Paint paint = new Paint();
         paint.setColor(Color.argb(128, 0, 255, 0));
-        aepPlot.getGraph().setDomainGridLinePaint(paint);
-        aepPlot.getGraph().setRangeGridLinePaint(paint);
+        epPlot.getGraph().setDomainGridLinePaint(paint);
+        epPlot.getGraph().setRangeGridLinePaint(paint);
 
 
         reset();
@@ -345,8 +424,10 @@ public class AEPFragment extends Fragment {
             ignoreCtr--;
             return;
         }
-        dt_avg = dt_avg + ((dt_real - dt_avg) / samplingRate / 100);
-        stimulusGenerator.set_period_ns(dt_avg * nSamples);
+        dt_avg = dt_avg + ((dt_real - dt_avg) / samplingRate / 50);
+        if (stimulusGenerator != null) {
+            stimulusGenerator.set_period_ns(dt_avg * nSamples);
+        }
     }
 
 
@@ -398,7 +479,7 @@ public class AEPFragment extends Fragment {
     }
 
 
-    private void saveAEP() {
+    private void saveEP() {
 
         final EditText filenameEditText = new EditText(getContext());
         filenameEditText.setSingleLine(true);
@@ -504,8 +585,8 @@ public class AEPFragment extends Fragment {
     }
 
     public void redraw() {
-        if (aepPlot != null) {
-            aepPlot.redraw();
+        if (epPlot != null) {
+            epPlot.redraw();
         }
     }
 }

@@ -95,8 +95,7 @@ public class AttysEEG extends AppCompatActivity {
 
     // Fragments
     // add yours here !
-    private AEPFragment aepPlotFragment = null;
-    private VEPFragment vepPlotFragment = null;
+    private EPFragment epFragment = null;
     private FastSlowRatioFragment betaRatioFragment = null;
 
 
@@ -270,8 +269,8 @@ public class AttysEEG extends AppCompatActivity {
     AttysComm.DataListener dataListener = new AttysComm.DataListener() {
         @Override
         public void gotData(long l, float[] f) {
-            if (aepPlotFragment != null) {
-                aepPlotFragment.tick();
+            if (epFragment != null) {
+                epFragment.tick();
             }
         }
     };
@@ -466,11 +465,8 @@ public class AttysEEG extends AppCompatActivity {
 
                             // fragements!
                             // add yours here
-                            if (aepPlotFragment != null) {
-                                aepPlotFragment.addValue((float) filteredEEG);
-                            }
-                            if (vepPlotFragment != null) {
-                                vepPlotFragment.addValue((float) filteredEEG);
+                            if (epFragment != null) {
+                                epFragment.addValue((float) filteredEEG);
                             }
                             if (betaRatioFragment != null) {
                                 betaRatioFragment.addValue((float) filteredEEG);
@@ -550,11 +546,8 @@ public class AttysEEG extends AppCompatActivity {
                     // Fragments!
                     // add a call here to refresh the plot at the same time the main
                     // window refreshes
-                    if (aepPlotFragment != null) {
-                        aepPlotFragment.redraw();
-                    }
-                    if (vepPlotFragment != null) {
-                        vepPlotFragment.redraw();
+                    if (epFragment != null) {
+                        epFragment.redraw();
                     }
                 }
             }
@@ -795,12 +788,8 @@ public class AttysEEG extends AppCompatActivity {
         // this is especially important for fragements
         // which generate a stimulus
         // otherwise they might run in the background
-        if (aepPlotFragment != null) {
-            aepPlotFragment.stopSweeps();
-        }
-
-        if (vepPlotFragment != null) {
-            vepPlotFragment.stopSweeps();
+        if (epFragment != null) {
+            epFragment.stopSweeps();
         }
 
         AppIndex.AppIndexApi.end(client, viewAction);
@@ -1030,38 +1019,20 @@ public class AttysEEG extends AppCompatActivity {
                 item.setChecked(showGamma);
                 return true;
 
-            case R.id.plotWindowAEP:
+            case R.id.plotWindowEP:
 
                 deleteFragmentWindow();
                 // Create a new Fragment to be placed in the activity layout
-                aepPlotFragment = new AEPFragment();
-                aepPlotFragment.setSamplingrate(attysComm.getSamplingRateInHz());
+                epFragment = new EPFragment();
+                epFragment.setSamplingrate(attysComm.getSamplingRateInHz());
                 // Add the fragment to the 'fragment_container' FrameLayout
                 if (Log.isLoggable(TAG, Log.DEBUG)) {
                     Log.d(TAG, "Adding AEP fragment");
                 }
                 getSupportFragmentManager().beginTransaction()
                         .add(R.id.fragment_plot_container,
-                                aepPlotFragment,
-                                "aepPlotFragment")
-                        .commit();
-                showPlotFragment();
-                return true;
-
-            case R.id.plotWindowVEP:
-
-                deleteFragmentWindow();
-                // Create a new Fragment to be placed in the activity layout
-                vepPlotFragment = new VEPFragment();
-                vepPlotFragment.setSamplingrate(attysComm.getSamplingRateInHz());
-                // Add the fragment to the 'fragment_container' FrameLayout
-                if (Log.isLoggable(TAG, Log.DEBUG)) {
-                    Log.d(TAG, "Adding AEP fragment");
-                }
-                getSupportFragmentManager().beginTransaction()
-                        .add(R.id.fragment_plot_container,
-                                vepPlotFragment,
-                                "vepPlotFragment")
+                                epFragment,
+                                "epFragment")
                         .commit();
                 showPlotFragment();
                 return true;
@@ -1139,8 +1110,7 @@ public class AttysEEG extends AppCompatActivity {
                 }
             }
         }
-        aepPlotFragment = null;
-        vepPlotFragment = null;
+        epFragment = null;
         betaRatioFragment = null;
     }
 

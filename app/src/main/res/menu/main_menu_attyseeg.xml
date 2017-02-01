@@ -20,11 +20,8 @@
                         android:id="@+id/plotWindowOff"
                         android:title="OFF" />
                     <item
-                        android:id="@+id/plotWindowAEP"
-                        android:title="AEP" />
-                    <item
-                        android:id="@+id/plotWindowVEP"
-                        android:title="VEP" />
+                        android:id="@+id/plotWindowEP"
+                        android:title="Evoked potentials" />
                     <item
                         android:id="@+id/plotWindowFastSlow"
                         android:title="EEG power fast/slow" />

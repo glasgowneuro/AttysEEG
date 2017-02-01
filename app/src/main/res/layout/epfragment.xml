@@ -52,6 +52,15 @@
 
         </LinearLayout>
 
+        <Spinner
+            android:id="@+id/ep_mode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:spinnerMode="dropdown"
+            android:layout_gravity="start"
+            />
+
         <com.androidplot.xy.XYPlot
             android:id="@+id/bpmPlotView"
             style="@style/APDefacto.Dark"
@@ -61,7 +70,7 @@
             ap:lineLabelRotationBottom="-45"
             ap:lineLabels="left|bottom"
             ap:rangeTitle="range"
-            ap:title="AEP/uV" />
+            ap:title=" " />
 
     </LinearLayout>
 
