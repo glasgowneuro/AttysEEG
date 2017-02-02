@@ -1025,6 +1025,7 @@ public class AttysEEG extends AppCompatActivity {
                 // Create a new Fragment to be placed in the activity layout
                 epFragment = new EPFragment();
                 epFragment.setSamplingrate(attysComm.getSamplingRateInHz());
+                epFragment.setPowerlineF(powerlineHz);
                 // Add the fragment to the 'fragment_container' FrameLayout
                 if (Log.isLoggable(TAG, Log.DEBUG)) {
                     Log.d(TAG, "Adding AEP fragment");

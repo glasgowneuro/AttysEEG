@@ -64,6 +64,16 @@ public class EPFragment extends Fragment {
             10 // VEP
     };
 
+    int SWEEP_DURATION_US_WITHOUT_CORRECTION = 400000;
+
+    int sweep_duration_us;
+
+    float powerlineF = 50;
+
+    void setPowerlineF(float _powerlineF) {
+        powerlineF = _powerlineF;
+    }
+
     private SimpleXYSeries epHistorySeries = null;
 
     private XYPlot epPlot = null;
@@ -78,12 +88,9 @@ public class EPFragment extends Fragment {
 
     View view = null;
 
-    // in secs
-    int sweep_duration_us = 400000;
+    int nSamples;
 
-    int nSamples = 0;
-
-    int samplingRate = 250;
+    int samplingRate;
 
     long samplingInterval_ns = 1;
 
@@ -105,9 +112,7 @@ public class EPFragment extends Fragment {
 
     long prev_nano_time = 0;
 
-    long dt_avg = sweep_duration_us * 1000;
-
-    private final long CONST1E9 = 1000000000;
+    long dt_avg;
 
     int ignoreCtr = 100;
 
@@ -136,27 +141,31 @@ public class EPFragment extends Fragment {
         @Override
         public void run() {
 
-            long t0 = System.nanoTime();
-
             while (doRun) {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        switch (mode) {
-                            case 0:
-                                doFlash();
-                                break;
-                            case 1:
-                                doClickSound();
-                                break;
+                long t0 = System.nanoTime();
+
+                while (doRun && doSweeps) {
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            switch (mode) {
+                                case 0:
+                                    doFlash();
+                                    break;
+                                case 1:
+                                    doClickSound();
+                                    break;
+                            }
                         }
+                    }).start();
+                    while ((t0 - System.nanoTime()) > 0) {
+                        yield();
                     }
-                }).start();
-                Log.d(TAG, "period_nano=" + period_nano);
-                while ((t0 - System.nanoTime()) > 0) {
+                    t0 = t0 + period_nano;
+                }
+                while((!doSweeps) && (doRun)) {
                     yield();
                 }
-                t0 = t0 + period_nano;
             }
         }
 
@@ -246,31 +255,26 @@ public class EPFragment extends Fragment {
 
     public void setSamplingrate(int _samplingrate) {
         samplingRate = _samplingrate;
+        final long CONST1E9 = 1000000000;
         samplingInterval_ns = CONST1E9 / _samplingrate;
         dt_avg = samplingInterval_ns;
     }
 
     public void startSweeps() {
-        index = 0;
-        nSweeps = 1;
-        stimulusGenerator = new StimulusGenerator();
-        stimulusGenerator.set_period_ns(sweep_duration_us * 1000);
-        stimulusThread = new Thread(stimulusGenerator);
+        if (stimulusGenerator != null) {
+            stimulusGenerator.set_period_ns(sweep_duration_us * 1000);
+        }
         acceptData = true;
         doSweeps = true;
-        stimulusThread.start();
+        index = 0;
+        nSweeps = 1;
     }
 
     public void stopSweeps() {
-        if (stimulusGenerator != null) {
-            stimulusGenerator.cancel();
-        }
-        stimulusGenerator = null;
         if (toggleButtonDoSweep != null) {
             toggleButtonDoSweep.setChecked(false);
         }
         doSweeps = false;
-        acceptData = false;
     }
 
     private void reset() {
@@ -278,12 +282,16 @@ public class EPFragment extends Fragment {
 
         stopSweeps();
 
-        resetEP();
         highpass = new Butterworth();
         highpass.highPass(2, samplingRate, highpassFreq[mode]);
-        nSamples = (int) (samplingRate * sweep_duration_us / 1000000);
+        nSamples = samplingRate * sweep_duration_us / 1000000;
         float tmax = nSamples * (1.0F / ((float) samplingRate));
         epPlot.setDomainBoundaries(0, tmax * 1000, BoundaryMode.FIXED);
+
+        int n = epHistorySeries.size();
+        for (int i = 0; i < n; i++) {
+            epHistorySeries.removeLast();
+        }
 
         for (int i = 0; i < nSamples; i++) {
             epHistorySeries.addLast(1000.0F * (float) i * (1.0F / ((float) samplingRate)), 0.0);
@@ -302,8 +310,6 @@ public class EPFragment extends Fragment {
             epPlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 100);
         }
 
-        stimulusGenerator = new StimulusGenerator();
-
         nanoTime = System.nanoTime() + samplingInterval_ns;
         prev_nano_time = System.nanoTime();
         ignoreCtr = 100;
@@ -312,14 +318,6 @@ public class EPFragment extends Fragment {
         epHistorySeries.setTitle(string_ep_modes[mode]+"/uV");
 
         ready = true;
-    }
-
-
-    private void resetEP() {
-        for (int i = 0; i < nSamples; i++) {
-            epHistorySeries.setY(0, i);
-        }
-        nSweeps = 1;
     }
 
 
@@ -336,6 +334,8 @@ public class EPFragment extends Fragment {
         if (container == null) {
             return null;
         }
+
+        sweep_duration_us = SWEEP_DURATION_US_WITHOUT_CORRECTION + (int)(1000000.0/powerlineF/3.0);
 
         view = inflater.inflate(R.layout.epfragment, container, false);
 
@@ -408,6 +408,9 @@ public class EPFragment extends Fragment {
         epPlot.getGraph().setDomainGridLinePaint(paint);
         epPlot.getGraph().setRangeGridLinePaint(paint);
 
+        stimulusGenerator = new StimulusGenerator();
+        stimulusThread = new Thread(stimulusGenerator);
+        stimulusThread.start();
 
         reset();
 
@@ -431,7 +434,7 @@ public class EPFragment extends Fragment {
     }
 
 
-    private void writeAEPfile() throws IOException {
+    private void writeEPfile() throws IOException {
 
         PrintWriter aepdataFileStream;
 
@@ -523,7 +526,7 @@ public class EPFragment extends Fragment {
                             }
                         }
                         try {
-                            writeAEPfile();
+                            writeEPfile();
                             Toast.makeText(getActivity(),
                                     "Successfully written '" + dataFilename + "' to the external memory",
                                     Toast.LENGTH_SHORT).show();
@@ -571,6 +574,8 @@ public class EPFragment extends Fragment {
             nSweeps++;
             index = 0;
 
+            acceptData = doSweeps;
+
             if (getActivity() != null) {
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
@@ -587,6 +592,7 @@ public class EPFragment extends Fragment {
     public void redraw() {
         if (epPlot != null) {
             epPlot.redraw();
+            //Log.d(TAG,"dtavg="+dt_avg);
         }
     }
 }
