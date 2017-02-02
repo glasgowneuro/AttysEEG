@@ -18,6 +18,15 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
+            <Spinner
+                android:id="@+id/ep_mode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:spinnerMode="dropdown"
+                android:layout_gravity="start"
+                />
+
             <ToggleButton
                 android:layout_weight="1"
                 android:id="@+id/doSweeps"
@@ -32,15 +41,10 @@
                 android:id="@+id/aepSave" />
 
             <TextView
-                android:id="@+id/nsweepsTextView"
-                android:layout_weight="1"
                 android:layout_width="0dp"
+                android:layout_weight="0.5"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:gravity="end"
-                android:text=""
-                android:textColor="#00FFFF"
-                android:textSize="12sp" />
+                android:text=" "/>
 
             <Button
                 android:layout_weight="1"
@@ -52,14 +56,15 @@
 
         </LinearLayout>
 
-        <Spinner
-            android:id="@+id/ep_mode"
+        <TextView
+            android:id="@+id/nsweepsTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:clickable="true"
-            android:spinnerMode="dropdown"
-            android:layout_gravity="start"
-            />
+            android:layout_gravity="center_vertical"
+            android:gravity="end"
+            android:text=""
+            android:textColor="#00FFFF"
+            android:textSize="12sp" />
 
         <com.androidplot.xy.XYPlot
             android:id="@+id/bpmPlotView"

@@ -54,6 +54,9 @@ public class EPFragment extends Fragment {
 
     String TAG = "EPFragment";
 
+    static final int MODE_VEP = 0;
+    static final int MODE_AEP = 1;
+
     public static final String[] string_ep_modes = {
             "VEP",
             "AEP"
@@ -94,6 +97,8 @@ public class EPFragment extends Fragment {
 
     long samplingInterval_ns = 1;
 
+    long actual_sweep_duration_in_ns = 2000000;
+
     int index = 0;
 
     int nSweeps = 1;
@@ -120,26 +125,18 @@ public class EPFragment extends Fragment {
 
     private Spinner spinnerMode;
 
-    int mode = 0;
+    int mode = MODE_VEP;
 
-    int spinner_mode = 0;
+    int spinner_mode = mode;
 
-    class StimulusGenerator implements Runnable {
+    class AudioStimulusGenerator implements Runnable {
 
-        long period_nano = 0;
         boolean doRun = true;
-
-        StimulusGenerator() {
-            initSound();
-            initFlash();
-        }
-
-        void set_period_ns(long _period_nano) {
-            period_nano = _period_nano;
-        }
 
         @Override
         public void run() {
+
+            initSound();
 
             while (doRun) {
                 long t0 = System.nanoTime();
@@ -148,28 +145,22 @@ public class EPFragment extends Fragment {
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            switch (mode) {
-                                case 0:
-                                    doFlash();
-                                    break;
-                                case 1:
-                                    doClickSound();
-                                    break;
-                            }
+                            doClickSound();
                         }
                     }).start();
                     while ((t0 - System.nanoTime()) > 0) {
                         yield();
                     }
-                    t0 = t0 + period_nano;
+                    t0 = t0 + actual_sweep_duration_in_ns;
                 }
-                while((!doSweeps) && (doRun)) {
+                while ((!doSweeps) && (doRun)) {
+                    //Log.d(TAG,"audio: nothing to do");
                     yield();
                 }
             }
         }
 
-        public synchronized void cancel() {
+        public void cancel() {
             doRun = false;
             sound.release();
         }
@@ -200,31 +191,7 @@ public class EPFragment extends Fragment {
             sound.write(rawAudio, 0, rawAudio.length);
         }
 
-        CameraManager cameraManager = null;
-        String cameraId = null;
-
-        public void initFlash() {
-            cameraManager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
-            try {
-                cameraId = cameraManager.getCameraIdList()[0];
-            } catch (Exception e) {
-                Log.d(TAG, "Could not find any flash");
-                cameraManager = null;
-            }
-        }
-
-        public synchronized void doFlash() {
-            if (cameraManager == null) return;
-            try {
-                cameraManager.setTorchMode(cameraId, true);
-                Thread.sleep(50, 0);
-                cameraManager.setTorchMode(cameraId, false);
-            } catch (Exception e) {
-                Log.d(TAG, "Could not switch on flash");
-            }
-        }
-
-        public synchronized void doClickSound() {
+        public void doClickSound() {
             switch (sound.getPlayState()) {
                 case AudioTrack.PLAYSTATE_PAUSED:
                     sound.stop();
@@ -249,9 +216,70 @@ public class EPFragment extends Fragment {
     }
 
 
-    StimulusGenerator stimulusGenerator;
-    Thread stimulusThread;
+    class FlashStimulusGenerator implements Runnable {
 
+        boolean doRun = true;
+
+        @Override
+        public void run() {
+
+            initFlash();
+
+            while (doRun) {
+                long t0 = System.nanoTime();
+
+                while (doRun && doSweeps) {
+                    doFlash();
+                    while ((t0 - System.nanoTime()) > 0) {
+                        yield();
+                    }
+                    t0 = t0 + actual_sweep_duration_in_ns;
+                }
+                while ((!doSweeps) && (doRun)) {
+                    yield();
+                }
+            }
+        }
+
+        public void cancel() {
+            doRun = false;
+        }
+
+        CameraManager cameraManager = null;
+        String cameraId = null;
+
+        public void initFlash() {
+            cameraManager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
+            try {
+                cameraId = cameraManager.getCameraIdList()[0];
+            } catch (Exception e) {
+                Log.d(TAG, "Could not find any flash");
+                cameraManager = null;
+            }
+        }
+
+        public void doFlash() {
+            if (cameraManager == null) return;
+            try {
+                cameraManager.setTorchMode(cameraId, true);
+            } catch (Exception e) {
+                Log.d(TAG, "Could not switch on flash");
+            }
+            try {
+                Thread.sleep(10, 0);
+            } catch (Exception e) {
+            }
+            try {
+                cameraManager.setTorchMode(cameraId, false);
+            } catch (Exception e) {
+                Log.d(TAG, "Could not switch on flash");
+            }
+        }
+    }
+
+
+    AudioStimulusGenerator audioStimulusGenerator;
+    FlashStimulusGenerator flashStimulusGenerator;
 
     public void setSamplingrate(int _samplingrate) {
         samplingRate = _samplingrate;
@@ -261,13 +289,11 @@ public class EPFragment extends Fragment {
     }
 
     public void startSweeps() {
-        if (stimulusGenerator != null) {
-            stimulusGenerator.set_period_ns(sweep_duration_us * 1000);
-        }
+        nSweeps = 1;
+        showSweeps();
+        index = 0;
         acceptData = true;
         doSweeps = true;
-        index = 0;
-        nSweeps = 1;
     }
 
     public void stopSweeps() {
@@ -281,6 +307,27 @@ public class EPFragment extends Fragment {
         ready = false;
 
         stopSweeps();
+
+        if (audioStimulusGenerator != null) {
+            audioStimulusGenerator.cancel();
+        }
+        if (flashStimulusGenerator != null) {
+            flashStimulusGenerator.cancel();
+        }
+
+        audioStimulusGenerator = null;
+        flashStimulusGenerator = null;
+
+        switch (mode) {
+            case MODE_VEP:
+                flashStimulusGenerator = new FlashStimulusGenerator();
+                new Thread(flashStimulusGenerator).start();
+                break;
+            case MODE_AEP:
+                audioStimulusGenerator = new AudioStimulusGenerator();
+                new Thread(audioStimulusGenerator).start();
+                break;
+        }
 
         highpass = new Butterworth();
         highpass.highPass(2, samplingRate, highpassFreq[mode]);
@@ -298,7 +345,9 @@ public class EPFragment extends Fragment {
         }
 
         index = 0;
-        nSweeps = 1;
+        nSweeps = 0;
+        showSweeps();
+        nSweeps++;
 
         DisplayMetrics metrics = new DisplayMetrics();
         getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
@@ -315,7 +364,8 @@ public class EPFragment extends Fragment {
         ignoreCtr = 100;
 
         epPlot.setTitle(string_ep_modes[mode]);
-        epHistorySeries.setTitle(string_ep_modes[mode]+"/uV");
+        epHistorySeries.setTitle(string_ep_modes[mode] + "/uV");
+        epPlot.redraw();
 
         ready = true;
     }
@@ -335,14 +385,14 @@ public class EPFragment extends Fragment {
             return null;
         }
 
-        sweep_duration_us = SWEEP_DURATION_US_WITHOUT_CORRECTION + (int)(1000000.0/powerlineF/3.0);
+        sweep_duration_us = SWEEP_DURATION_US_WITHOUT_CORRECTION + (int) (1000000.0 / powerlineF / 3.0);
 
         view = inflater.inflate(R.layout.epfragment, container, false);
 
         // setup the APR Levels plot:
         epPlot = (XYPlot) view.findViewById(R.id.bpmPlotView);
         sweepNoText = (TextView) view.findViewById(R.id.nsweepsTextView);
-        sweepNoText.setText(String.format("%04d sweeps", 0));
+        sweepNoText.setText(" ");
         toggleButtonDoSweep = (ToggleButton) view.findViewById(R.id.doSweeps);
         toggleButtonDoSweep.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -408,14 +458,28 @@ public class EPFragment extends Fragment {
         epPlot.getGraph().setDomainGridLinePaint(paint);
         epPlot.getGraph().setRangeGridLinePaint(paint);
 
-        stimulusGenerator = new StimulusGenerator();
-        stimulusThread = new Thread(stimulusGenerator);
-        stimulusThread.start();
-
         reset();
 
         return view;
 
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        stopSweeps();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+
+        if (audioStimulusGenerator != null) {
+            audioStimulusGenerator.cancel();
+        }
+        if (flashStimulusGenerator != null) {
+            flashStimulusGenerator.cancel();
+        }
     }
 
 
@@ -428,9 +492,7 @@ public class EPFragment extends Fragment {
             return;
         }
         dt_avg = dt_avg + ((dt_real - dt_avg) / samplingRate / 50);
-        if (stimulusGenerator != null) {
-            stimulusGenerator.set_period_ns(dt_avg * nSamples);
-        }
+        actual_sweep_duration_in_ns = dt_avg * nSamples;
     }
 
 
@@ -547,6 +609,20 @@ public class EPFragment extends Fragment {
     }
 
 
+    public void showSweeps() {
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (sweepNoText != null) {
+                        sweepNoText.setText(String.format("%04d sweeps", nSweeps));
+                    }
+                }
+            });
+        }
+    }
+
+
     public synchronized void addValue(final float v) {
 
         if (!ready) return;
@@ -573,26 +649,15 @@ public class EPFragment extends Fragment {
         if (index == nSamples) {
             nSweeps++;
             index = 0;
-
             acceptData = doSweeps;
-
-            if (getActivity() != null) {
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (sweepNoText != null) {
-                            sweepNoText.setText(String.format("%04d sweeps", nSweeps));
-                        }
-                    }
-                });
+            if (doSweeps) {
+                showSweeps();
             }
+            epPlot.redraw();
+
         }
     }
 
     public void redraw() {
-        if (epPlot != null) {
-            epPlot.redraw();
-            //Log.d(TAG,"dtavg="+dt_avg);
-        }
     }
 }
