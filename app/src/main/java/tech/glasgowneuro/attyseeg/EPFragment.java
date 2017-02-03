@@ -81,6 +81,9 @@ public class EPFragment extends Fragment {
 
     private XYPlot epPlot = null;
 
+    private StimulusView stimulusView1 = null;
+    private StimulusView stimulusView2 = null;
+
     private TextView sweepNoText = null;
 
     private ToggleButton toggleButtonDoSweep;
@@ -219,61 +222,61 @@ public class EPFragment extends Fragment {
     class FlashStimulusGenerator implements Runnable {
 
         boolean doRun = true;
+        boolean inverted = false;
 
         @Override
         public void run() {
 
-            initFlash();
+            inverted = false;
 
             while (doRun) {
                 long t0 = System.nanoTime();
 
                 while (doRun && doSweeps) {
-                    doFlash();
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (inverted) {
+                                stimulusView2.setVisibility(View.INVISIBLE);
+                            } else {
+                                stimulusView2.setVisibility(View.VISIBLE);
+                            }
+                            inverted = !inverted;
+                        }
+                    });
                     while ((t0 - System.nanoTime()) > 0) {
                         yield();
                     }
                     t0 = t0 + actual_sweep_duration_in_ns;
                 }
                 while ((!doSweeps) && (doRun)) {
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            stimulusView1.setVisibility(View.INVISIBLE);
+                            stimulusView2.setVisibility(View.INVISIBLE);
+                        }
+                    });
                     yield();
                 }
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        stimulusView1.setVisibility(View.VISIBLE);
+                    }
+                });
             }
         }
 
         public void cancel() {
             doRun = false;
-        }
-
-        CameraManager cameraManager = null;
-        String cameraId = null;
-
-        public void initFlash() {
-            cameraManager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
-            try {
-                cameraId = cameraManager.getCameraIdList()[0];
-            } catch (Exception e) {
-                Log.d(TAG, "Could not find any flash");
-                cameraManager = null;
-            }
-        }
-
-        public void doFlash() {
-            if (cameraManager == null) return;
-            try {
-                cameraManager.setTorchMode(cameraId, true);
-            } catch (Exception e) {
-                Log.d(TAG, "Could not switch on flash");
-            }
-            try {
-                Thread.sleep(10, 0);
-            } catch (Exception e) {
-            }
-            try {
-                cameraManager.setTorchMode(cameraId, false);
-            } catch (Exception e) {
-                Log.d(TAG, "Could not switch on flash");
-            }
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    stimulusView1.setVisibility(View.INVISIBLE);
+                    stimulusView2.setVisibility(View.INVISIBLE);
+                }
+            });
         }
     }
 
@@ -286,6 +289,16 @@ public class EPFragment extends Fragment {
         final long CONST1E9 = 1000000000;
         samplingInterval_ns = CONST1E9 / _samplingrate;
         dt_avg = samplingInterval_ns;
+    }
+
+    public void setStimulusView1(StimulusView _stimulusView) {
+        stimulusView1 = _stimulusView;
+        stimulusView1.setInverted(false);
+    }
+
+    public void setStimulusView2(StimulusView _stimulusView) {
+        stimulusView2 = _stimulusView;
+        stimulusView2.setInverted(true);
     }
 
     public void startSweeps() {

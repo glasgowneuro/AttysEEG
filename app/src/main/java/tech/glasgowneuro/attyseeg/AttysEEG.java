@@ -109,6 +109,8 @@ public class AttysEEG extends AppCompatActivity {
 
     private RealtimePlotView realtimePlotView = null;
     private InfoView infoView = null;
+    private StimulusView stimulusView1 = null;
+    private StimulusView stimulusView2 = null;
 
     private BluetoothAdapter BA;
     private AttysComm attysComm = null;
@@ -701,6 +703,9 @@ public class AttysEEG extends AppCompatActivity {
         infoView.setZOrderOnTop(true);
         infoView.setZOrderMediaOverlay(true);
 
+        stimulusView1 = (StimulusView) findViewById(R.id.stimulusview1);
+        stimulusView2 = (StimulusView) findViewById(R.id.stimulusview2);
+
         attysComm.start();
 
         timer = new Timer();
@@ -1025,6 +1030,8 @@ public class AttysEEG extends AppCompatActivity {
                 // Create a new Fragment to be placed in the activity layout
                 epFragment = new EPFragment();
                 epFragment.setSamplingrate(attysComm.getSamplingRateInHz());
+                epFragment.setStimulusView1(stimulusView1);
+                epFragment.setStimulusView2(stimulusView2);
                 epFragment.setPowerlineF(powerlineHz);
                 // Add the fragment to the 'fragment_container' FrameLayout
                 if (Log.isLoggable(TAG, Log.DEBUG)) {
@@ -1078,7 +1085,7 @@ public class AttysEEG extends AppCompatActivity {
         FrameLayout frameLayout = (FrameLayout) findViewById(R.id.mainplotlayout);
         frameLayout.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.MATCH_PARENT, 1.0f));
+                LinearLayout.LayoutParams.MATCH_PARENT, 0.65f));
 
         frameLayout = (FrameLayout) findViewById(R.id.fragment_plot_container);
         frameLayout.setLayoutParams(new LinearLayout.LayoutParams(
