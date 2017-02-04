@@ -1,13 +1,11 @@
 package tech.glasgowneuro.attyseeg;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.hardware.camera2.CameraManager;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -63,110 +61,110 @@ public class EPFragment extends Fragment {
     };
 
     final float[] highpassFreq = {
-            1, // VEP
-            10 // VEP
+            0.5F, // VEP
+            0.5F  // AEP
     };
 
-    int SWEEP_DURATION_US_WITHOUT_CORRECTION = 400000;
+    // this is our desired sweep duration
+    int SWEEP_DURATION_US_WITHOUT_CORRECTION = 500000;
 
+    // this is our actual sweep duration derived
+    // from the RTC and measuring the time between samples
     int sweep_duration_us;
 
+    // powerline frequency
     float powerlineF = 50;
 
+    // set the powerline frequency
     void setPowerlineF(float _powerlineF) {
         powerlineF = _powerlineF;
     }
 
-    private SimpleXYSeries epHistorySeries = null;
-
+    // the androidplot which holds the plot
     private XYPlot epPlot = null;
 
+    // the actual graph
+    private SimpleXYSeries epHistorySeries = null;
+
+    // the checkerboards hosted by the main UI
     private StimulusView stimulusView1 = null;
     private StimulusView stimulusView2 = null;
 
+    // keeps the sweep numbers
     private TextView sweepNoText = null;
 
+    // sweeps on/off
     private ToggleButton toggleButtonDoSweep;
 
+    // reset button to get rid of the sweeps
     private Button resetButton;
 
+    // saving the AEP data
     private Button saveButton;
 
+    // the view which hosts all the views above
     View view = null;
 
+    // number of samples calcuated from the desired sweep length
     int nSamples;
 
+    // samplingrate of the Attys
     int samplingRate;
 
+    // actual sampling interval in ns for the
+    // stimulus generator
     long samplingInterval_ns = 1;
 
+    // actual total sweep duration
     long actual_sweep_duration_in_ns = 2000000;
 
+    // sample index within a sweep
     int index = 0;
 
+    // number of sweeps
     int nSweeps = 1;
 
+    // ignore samples when it's false
+    // used for startup
     boolean ready = false;
 
+    // it's written on the tin
     boolean doSweeps = false;
 
+    // when true data is added to the averaging array
     boolean acceptData = false;
 
+    // filename
     private String dataFilename = null;
 
+    // separator for the data file
     private byte dataSeparator = AttysComm.DATA_SEPARATOR_TAB;
 
+    // used to calc the actual sampling interval
     long nanoTime = 0;
-
     long prev_nano_time = 0;
-
     long dt_avg;
-
     int ignoreCtr = 100;
 
+    // overall highpass mainly to avoid eyeblinks and DC drift
     Butterworth highpass;
 
+    // selects the stim mode
     private Spinner spinnerMode;
 
+    // default mode is VEP
     int mode = MODE_VEP;
 
+    // tracks what the spinner has for a mode
     int spinner_mode = mode;
 
+
+    // stimulus generator for audio
+    // uses the variables from the parent class to
+    // start/stop the stim and timing
     class AudioStimulusGenerator implements Runnable {
 
         boolean doRun = true;
-
-        @Override
-        public void run() {
-
-            initSound();
-
-            while (doRun) {
-                long t0 = System.nanoTime();
-
-                while (doRun && doSweeps) {
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            doClickSound();
-                        }
-                    }).start();
-                    while ((t0 - System.nanoTime()) > 0) {
-                        yield();
-                    }
-                    t0 = t0 + actual_sweep_duration_in_ns;
-                }
-                while ((!doSweeps) && (doRun)) {
-                    //Log.d(TAG,"audio: nothing to do");
-                    yield();
-                }
-            }
-        }
-
-        public void cancel() {
-            doRun = false;
-            sound.release();
-        }
 
         // audio
         private AudioTrack sound;
@@ -194,44 +192,82 @@ public class EPFragment extends Fragment {
             sound.write(rawAudio, 0, rawAudio.length);
         }
 
-        public void doClickSound() {
-            switch (sound.getPlayState()) {
-                case AudioTrack.PLAYSTATE_PAUSED:
-                    sound.stop();
-                    sound.reloadStaticData();
-                    sound.reloadStaticData();
-                    sound.play();
-                    break;
-                case AudioTrack.PLAYSTATE_PLAYING:
-                    sound.stop();
-                    sound.reloadStaticData();
-                    sound.play();
-                    break;
-                case AudioTrack.PLAYSTATE_STOPPED:
-                    sound.reloadStaticData();
-                    sound.play();
-                    break;
-                default:
-                    break;
+        @Override
+        public void run() {
+
+            initSound();
+
+            while (doRun) {
+                long t0 = System.nanoTime();
+
+                while (doRun && doSweeps) {
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                sound.pause();
+                                sound.flush();
+                                sound.reloadStaticData();
+                                sound.play();
+                            } catch (IllegalStateException e) {}
+                        }
+                    }).start();
+                    while ((t0 - System.nanoTime()) > 0) {
+                        yield();
+                    }
+                    t0 = t0 + actual_sweep_duration_in_ns;
+                }
+                while ((!doSweeps) && (doRun)) {
+                    //Log.d(TAG,"audio: nothing to do");
+                    yield();
+                }
             }
         }
 
+        public void cancel() {
+            doRun = false;
+            sound.release();
+        }
     }
 
 
-    class FlashStimulusGenerator implements Runnable {
+    // stimulus generator for the checkerboard
+    // uses the variables from the parent class to
+    // start/stop the stim and timing
+    class VisualStimulusGenerator implements Runnable {
 
         boolean doRun = true;
         boolean inverted = false;
+
+        void setInvisible() {
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (stimulusView1 != null) {
+                            stimulusView1.setVisibility(View.INVISIBLE);
+                        }
+                        if (stimulusView2 !=null) {
+                            stimulusView2.setVisibility(View.INVISIBLE);
+                        }
+                    }
+                });
+            }
+        }
 
         @Override
         public void run() {
 
             inverted = false;
 
+            // endless stimulation loop
             while (doRun) {
+                // we record the absolute time and
+                // then we add our stimulation interval and wait
                 long t0 = System.nanoTime();
 
+                // this loop runs as long as we stimuate and
+                // falls through when we stop
                 while (doRun && doSweeps) {
                     getActivity().runOnUiThread(new Runnable() {
                         @Override
@@ -249,16 +285,14 @@ public class EPFragment extends Fragment {
                     }
                     t0 = t0 + actual_sweep_duration_in_ns;
                 }
+
+                // falls through when stim is not on
+                setInvisible();
                 while ((!doSweeps) && (doRun)) {
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            stimulusView1.setVisibility(View.INVISIBLE);
-                            stimulusView2.setVisibility(View.INVISIBLE);
-                        }
-                    });
                     yield();
                 }
+
+                // here we arrive when the stimulation starts
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -266,24 +300,19 @@ public class EPFragment extends Fragment {
                     }
                 });
             }
+            setInvisible();
         }
 
         public void cancel() {
             doRun = false;
-            getActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    stimulusView1.setVisibility(View.INVISIBLE);
-                    stimulusView2.setVisibility(View.INVISIBLE);
-                }
-            });
+            setInvisible();
         }
     }
 
-
     AudioStimulusGenerator audioStimulusGenerator;
-    FlashStimulusGenerator flashStimulusGenerator;
+    VisualStimulusGenerator visualStimulusGenerator;
 
+    // sets the sampling rate
     public void setSamplingrate(int _samplingrate) {
         samplingRate = _samplingrate;
         final long CONST1E9 = 1000000000;
@@ -291,16 +320,19 @@ public class EPFragment extends Fragment {
         dt_avg = samplingInterval_ns;
     }
 
+    // sets the background layer of the visual stimulus
     public void setStimulusView1(StimulusView _stimulusView) {
         stimulusView1 = _stimulusView;
         stimulusView1.setInverted(false);
     }
 
+    // sets the foreground layer of the visual stimulus
     public void setStimulusView2(StimulusView _stimulusView) {
         stimulusView2 = _stimulusView;
         stimulusView2.setInverted(true);
     }
 
+    // starts the sweeps
     public void startSweeps() {
         nSweeps = 1;
         showSweeps();
@@ -309,6 +341,7 @@ public class EPFragment extends Fragment {
         doSweeps = true;
     }
 
+    // stops them
     public void stopSweeps() {
         if (toggleButtonDoSweep != null) {
             toggleButtonDoSweep.setChecked(false);
@@ -316,25 +349,34 @@ public class EPFragment extends Fragment {
         doSweeps = false;
     }
 
+    // called by the reset button and at startup
     private void reset() {
         ready = false;
+
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                stimulusView1.setVisibility(View.INVISIBLE);
+                stimulusView2.setVisibility(View.INVISIBLE);
+            }
+        });
 
         stopSweeps();
 
         if (audioStimulusGenerator != null) {
             audioStimulusGenerator.cancel();
         }
-        if (flashStimulusGenerator != null) {
-            flashStimulusGenerator.cancel();
+        if (visualStimulusGenerator != null) {
+            visualStimulusGenerator.cancel();
         }
 
         audioStimulusGenerator = null;
-        flashStimulusGenerator = null;
+        visualStimulusGenerator = null;
 
         switch (mode) {
             case MODE_VEP:
-                flashStimulusGenerator = new FlashStimulusGenerator();
-                new Thread(flashStimulusGenerator).start();
+                visualStimulusGenerator = new VisualStimulusGenerator();
+                new Thread(visualStimulusGenerator).start();
                 break;
             case MODE_AEP:
                 audioStimulusGenerator = new AudioStimulusGenerator();
@@ -377,8 +419,16 @@ public class EPFragment extends Fragment {
         ignoreCtr = 100;
 
         epPlot.setTitle(string_ep_modes[mode]);
-        epHistorySeries.setTitle(string_ep_modes[mode] + "/uV");
+        epHistorySeries.setTitle(string_ep_modes[mode] + "/\u03bcV");
         epPlot.redraw();
+
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                stimulusView1.setVisibility(View.INVISIBLE);
+                stimulusView2.setVisibility(View.INVISIBLE);
+            }
+        });
 
         ready = true;
     }
@@ -398,7 +448,7 @@ public class EPFragment extends Fragment {
             return null;
         }
 
-        sweep_duration_us = SWEEP_DURATION_US_WITHOUT_CORRECTION + (int) (1000000.0 / powerlineF / 3.0);
+        sweep_duration_us = SWEEP_DURATION_US_WITHOUT_CORRECTION + (int) (1000000.0 / powerlineF / 2.0);
 
         view = inflater.inflate(R.layout.epfragment, container, false);
 
@@ -490,12 +540,13 @@ public class EPFragment extends Fragment {
         if (audioStimulusGenerator != null) {
             audioStimulusGenerator.cancel();
         }
-        if (flashStimulusGenerator != null) {
-            flashStimulusGenerator.cancel();
+        if (visualStimulusGenerator != null) {
+            visualStimulusGenerator.cancel();
         }
     }
 
-
+    // called when a sample arrives and is used to measure
+    // the actual sampling rate and the actual sweep duration
     public void tick() {
         prev_nano_time = nanoTime;
         nanoTime = System.nanoTime();
@@ -635,7 +686,9 @@ public class EPFragment extends Fragment {
         }
     }
 
-
+    // adds samples from the main UI usually in batches
+    // so cannot be used for sampling rate estimation
+    // but less comp demanding
     public synchronized void addValue(final float v) {
 
         if (!ready) return;
@@ -651,10 +704,8 @@ public class EPFragment extends Fragment {
 
         double avg = epHistorySeries.getY(index).doubleValue();
         double v2 = highpass.filter(v * 1E6);
-        //avg = (avg + new_value)/2;
         double nSweepsD = (double) nSweeps;
         avg = ((nSweepsD - 1) / nSweepsD) * avg + (1 / nSweepsD) * v2;
-        // Log.d(TAG,"avg="+avg);
         if (index < epHistorySeries.size()) {
             epHistorySeries.setY(avg, index);
         }
@@ -669,8 +720,5 @@ public class EPFragment extends Fragment {
             epPlot.redraw();
 
         }
-    }
-
-    public void redraw() {
     }
 }

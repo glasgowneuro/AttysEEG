@@ -43,7 +43,7 @@ public class BarGraphFragment extends Fragment {
     String title = "Amplitudes";
 
     public static final String[] string_bargraph_modes = {
-            "Absolute Amplitudes (uV)",
+            "Absolute Amplitudes (\u03bcV)",
             "Normalised Amplitudes"
     };
 
@@ -110,12 +110,12 @@ public class BarGraphFragment extends Fragment {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 mode = position;
                 if (mode == 0) {
-                    barPlot.setRangeBoundaries(0, 50, BoundaryMode.GROW);
-                    barPlot.setRangeStep(StepMode.INCREMENT_BY_VAL, 10);
-                    barPlot.setRangeLabel("uV");
+                    barPlot.setRangeLowerBoundary(0,BoundaryMode.FIXED);
+                    barPlot.setRangeUpperBoundary(50,BoundaryMode.AUTO);
+                    barPlot.setRangeLabel("\u03bcV");
                 } else {
-                    barPlot.setRangeBoundaries(0, 1, BoundaryMode.FIXED);
-                    barPlot.setRangeStep(StepMode.INCREMENT_BY_VAL, 0.2);
+                    barPlot.setRangeLowerBoundary(0,BoundaryMode.FIXED);
+                    barPlot.setRangeUpperBoundary(1,BoundaryMode.AUTO);
                     barPlot.setRangeLabel("normalised");
                 }
             }

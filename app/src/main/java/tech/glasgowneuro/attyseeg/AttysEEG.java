@@ -548,13 +548,6 @@ public class AttysEEG extends AppCompatActivity {
                     if (realtimePlotView != null) {
                         realtimePlotView.stopAddSamples();
                     }
-
-                    // Fragments!
-                    // add a call here to refresh the plot at the same time the main
-                    // window refreshes
-                    if (epFragment != null) {
-                        epFragment.redraw();
-                    }
                 }
             }
         }
@@ -1142,6 +1135,8 @@ public class AttysEEG extends AppCompatActivity {
         }
         epFragment = null;
         betaRatioFragment = null;
+        stimulusView1.setVisibility(View.INVISIBLE);
+        stimulusView2.setVisibility(View.INVISIBLE);
     }
 
 
