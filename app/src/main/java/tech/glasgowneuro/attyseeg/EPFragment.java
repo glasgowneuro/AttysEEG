@@ -218,7 +218,6 @@ public class EPFragment extends Fragment {
                     t0 = t0 + actual_sweep_duration_in_ns;
                 }
                 while ((!doSweeps) && (doRun)) {
-                    //Log.d(TAG,"audio: nothing to do");
                     yield();
                 }
             }
@@ -442,7 +441,9 @@ public class EPFragment extends Fragment {
                              ViewGroup container,
                              Bundle savedInstanceState) {
 
-        Log.d(TAG, "onCreate, creating Fragment");
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "creating Fragment");
+        }
 
         if (container == null) {
             return null;
@@ -571,7 +572,9 @@ public class EPFragment extends Fragment {
         try {
             file = new File(AttysEEG.ATTYSDIR, dataFilename.trim());
             file.createNewFile();
-            Log.d(TAG, "Saving AEP to " + file.getAbsolutePath());
+            if (Log.isLoggable(TAG, Log.DEBUG)) {
+                Log.d(TAG, "Saving AEP to " + file.getAbsolutePath());
+            }
             aepdataFileStream = new PrintWriter(file);
         } catch (java.io.FileNotFoundException e) {
             throw e;
@@ -592,8 +595,8 @@ public class EPFragment extends Fragment {
 
         for (int i = 0; i < nSamples; i++) {
             aepdataFileStream.format("%e%c%e%c\n",
-                    epHistorySeries.getX(i), s,
-                    epHistorySeries.getY(i), s);
+                    epHistorySeries.getX(i).floatValue(), s,
+                    epHistorySeries.getY(i).floatValue(), s);
             if (aepdataFileStream.checkError()) {
                 throw new IOException("AEP write error");
             }
@@ -660,9 +663,10 @@ public class EPFragment extends Fragment {
                             Toast.makeText(getActivity(),
                                     "Write Error while saving '" + dataFilename + "' to the external memory",
                                     Toast.LENGTH_SHORT).show();
-                            Log.d(TAG, "Error saving AEP file: ", e);
+                            if (Log.isLoggable(TAG, Log.DEBUG)) {
+                                Log.d(TAG, "Error saving AEP file: ", e);
+                            }
                         }
-                        ;
                     }
                 })
                 .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {

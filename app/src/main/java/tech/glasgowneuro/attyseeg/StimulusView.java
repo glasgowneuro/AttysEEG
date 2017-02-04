@@ -8,23 +8,36 @@ import android.util.AttributeSet;
 import android.view.View;
 
 /**
- * Created by bp1 on 03/02/17.
+ * Creates the checkerboard stimulus
  */
 
 public class StimulusView extends View {
 
     boolean inverted = false;
+    Paint paint_white;
+    Paint paint_black;
+
+    private void doInit() {
+        paint_white = new Paint();
+        paint_white.setColor(Color.rgb(255, 255, 255));
+
+        paint_black = new Paint();
+        paint_black.setColor(Color.rgb(0, 0, 0));
+    }
 
     public StimulusView(Context context) {
         super(context);
+        doInit();
     }
 
     public StimulusView(Context context, AttributeSet attrs) {
         super(context, attrs);
+        doInit();
     }
 
     public StimulusView(Context context, AttributeSet attrs, int defStyle) {
         super(context,attrs,defStyle);
+        doInit();
     }
 
     public void setInverted(boolean _inverted) {
@@ -39,12 +52,6 @@ public class StimulusView extends View {
         int h = canvas.getHeight();
         int dx = w/10;
         int dy = w/10;
-
-        Paint paint_white = new Paint();
-        paint_white.setColor(Color.rgb(255, 255, 255));
-
-        Paint paint_black = new Paint();
-        paint_black.setColor(Color.rgb(0, 0, 0));
 
         boolean start_white = inverted;
         for(int y = 0;y<h;y = y + dy) {

@@ -2,10 +2,8 @@ package tech.glasgowneuro.attyseeg;
 
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.graphics.Shader;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.DisplayMetrics;
@@ -21,19 +19,15 @@ import com.androidplot.xy.BarFormatter;
 import com.androidplot.xy.BarRenderer;
 import com.androidplot.xy.BoundaryMode;
 import com.androidplot.xy.SimpleXYSeries;
-import com.androidplot.xy.StepFormatter;
 import com.androidplot.xy.StepMode;
 import com.androidplot.xy.XYGraphWidget;
 import com.androidplot.xy.XYPlot;
 
-import java.text.FieldPosition;
-import java.text.Format;
-import java.text.ParsePosition;
 
 import uk.me.berndporr.iirj.Butterworth;
 
 /**
- * Created by bp1 on 03/02/17.
+ * Shows a histogram of the EEG amplitudes
  */
 
 public class BarGraphFragment extends Fragment {
@@ -89,7 +83,9 @@ public class BarGraphFragment extends Fragment {
                              ViewGroup container,
                              Bundle savedInstanceState) {
 
-        Log.d(TAG, "onCreate, creating Fragment");
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "creating Fragment");
+        }
 
         if (container == null) {
             return null;

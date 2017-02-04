@@ -38,11 +38,10 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import tech.glasgowneuro.attyscomm.AttysComm;
-import uk.me.berndporr.iirj.Bessel;
 import uk.me.berndporr.iirj.Butterworth;
 
 /**
- * Created by bp1 on 31/01/17.
+ * Displays FastSlow and Beta ratio
  */
 
 public class FastSlowRatioFragment extends Fragment {
@@ -179,7 +178,9 @@ public class FastSlowRatioFragment extends Fragment {
                              ViewGroup container,
                              Bundle savedInstanceState) {
 
-        Log.d(TAG, "onCreate, creating Fragment");
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+            Log.d(TAG, "creating Fragment");
+        }
 
         if (container == null) {
             return null;
@@ -290,7 +291,9 @@ public class FastSlowRatioFragment extends Fragment {
         try {
             file = new File(AttysEEG.ATTYSDIR, dataFilename.trim());
             file.createNewFile();
-            Log.d(TAG, "Saving fast/slow data to " + file.getAbsolutePath());
+            if (Log.isLoggable(TAG, Log.DEBUG)) {
+                Log.d(TAG, "Saving fast/slow data to " + file.getAbsolutePath());
+            }
             aepdataFileStream = new PrintWriter(file);
         } catch (java.io.FileNotFoundException e) {
             throw e;
@@ -311,8 +314,8 @@ public class FastSlowRatioFragment extends Fragment {
 
         for (int i = 0; i < fastSlowFullSeries.size(); i++) {
             aepdataFileStream.format("%e%c%e%c\n",
-                    fastSlowFullSeries.getX(i), s,
-                    fastSlowFullSeries.getY(i), s);
+                    fastSlowFullSeries.getX(i).floatValue(), s,
+                    fastSlowFullSeries.getY(i).floatValue(), s);
             if (aepdataFileStream.checkError()) {
                 throw new IOException("file write error");
             }
@@ -379,9 +382,10 @@ public class FastSlowRatioFragment extends Fragment {
                             Toast.makeText(getActivity(),
                                     "Write Error while saving '" + dataFilename + "' to the external memory",
                                     Toast.LENGTH_SHORT).show();
-                            Log.d(TAG, "Error saving file: ", e);
+                            if (Log.isLoggable(TAG, Log.DEBUG)) {
+                                Log.d(TAG, "Error saving file: ", e);
+                            }
                         }
-                        ;
                     }
                 })
                 .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -450,10 +454,7 @@ public class FastSlowRatioFragment extends Fragment {
             fastSlowHistorySeries.addLast(step * delta_t, fastSlowRatio);
             fastSlowFullSeries.addLast(step * delta_t, fastSlowRatio);
             step++;
-            //Log.v(TAG, "fastSlowRatio=" + fastSlowRatio);
-            //Log.v(TAG, "size="+fastSlowHistorySeries.size());
             fastSlowPlot.redraw();
-
         }
     }
 }

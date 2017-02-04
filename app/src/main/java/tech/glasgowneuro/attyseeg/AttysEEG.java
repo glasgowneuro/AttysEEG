@@ -261,7 +261,11 @@ public class AttysEEG extends AppCompatActivity {
             if (textdataFileStream != null) {
                 textdataFileStream.format("%s\n", tmp);
                 if (textdataFileStream != null) {
-                    if (textdataFileStream.checkError()) Log.d(TAG, "Error while saving");
+                    if (textdataFileStream.checkError()) {
+                        if (Log.isLoggable(TAG, Log.ERROR)) {
+                            Log.e(TAG, "Error while saving");
+                        }
+                    }
                 }
             }
         }
