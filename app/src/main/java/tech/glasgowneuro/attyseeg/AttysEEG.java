@@ -97,6 +97,7 @@ public class AttysEEG extends AppCompatActivity {
     // add yours here !
     private EPFragment epFragment = null;
     private FastSlowRatioFragment betaRatioFragment = null;
+    private BarGraphFragment barGraphFragment = null;
 
 
     /////////////////////////////////////////////////////
@@ -472,6 +473,9 @@ public class AttysEEG extends AppCompatActivity {
                             }
                             if (betaRatioFragment != null) {
                                 betaRatioFragment.addValue((float) filteredEEG);
+                            }
+                            if (barGraphFragment != null) {
+                                barGraphFragment.addValue(delta,theta,alpha,beta,gamma);
                             }
 
                             // now plotting it in the main window
@@ -1059,6 +1063,24 @@ public class AttysEEG extends AppCompatActivity {
                         .add(R.id.fragment_plot_container,
                                 betaRatioFragment,
                                 "betaRatioFragment")
+                        .commit();
+                showPlotFragment();
+                return true;
+
+            case R.id.plotWindowBarGraph:
+
+                deleteFragmentWindow();
+                // Create a new Fragment to be placed in the activity layout
+                barGraphFragment = new BarGraphFragment();
+                barGraphFragment.setSamplingRate(attysComm.getSamplingRateInHz());
+                // Add the fragment to the 'fragment_container' FrameLayout
+                if (Log.isLoggable(TAG, Log.DEBUG)) {
+                    Log.d(TAG, "Adding bar fragment");
+                }
+                getSupportFragmentManager().beginTransaction()
+                        .add(R.id.fragment_plot_container,
+                                barGraphFragment,
+                                "barGraphFragment")
                         .commit();
                 showPlotFragment();
                 return true;

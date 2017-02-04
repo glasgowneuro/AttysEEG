@@ -25,6 +25,9 @@
                     <item
                         android:id="@+id/plotWindowFastSlow"
                         android:title="EEG power fast/slow" />
+                    <item
+                        android:id="@+id/plotWindowBarGraph"
+                        android:title="EEG amplitudes" />
                 </menu>
             </item>
 
