@@ -1,5 +1,16 @@
 AttysEEG
 --------
 
-EEG app (alpha!)
+EEG app for Attys
 
+Features
+-------
+
+- Plot of Raw EEG data at 250Hz or 500Hz sampling rate
+- Plot of alpha, gamma, delta, beta and theta waves
+- Visually evoked potentials
+- Acoustically evoked potentials
+- Beta ratio and PowerFastSlow, used in depth of anaesthesia
+- Histogram amplitudes of alpha, gamma, delta, beta and theta waves
+- Saves the raw data and the filtered frequency bands
+- Works on wide range of screens form tablets to mobile phones
