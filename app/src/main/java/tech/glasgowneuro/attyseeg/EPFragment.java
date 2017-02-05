@@ -38,6 +38,8 @@ import com.androidplot.xy.XYPlot;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import tech.glasgowneuro.attyscomm.AttysComm;
 import uk.me.berndporr.iirj.Butterworth;
@@ -72,7 +74,21 @@ public class EPFragment extends Fragment {
     // from the RTC and measuring the time between samples
     int sweep_duration_us;
 
-    // powerline frequency
+    Timer timer = null;
+
+    boolean stimFlag = false;
+
+    private class StartSweepTask extends TimerTask {
+
+        public synchronized void run() {
+            epPlot.redraw();
+            nSweeps++;
+            stimFlag = true;
+            index = 0;
+        }
+    }
+
+            // powerline frequency
     float powerlineF = 50;
 
     // set the powerline frequency
@@ -115,9 +131,6 @@ public class EPFragment extends Fragment {
     // stimulus generator
     long samplingInterval_ns = 1;
 
-    // actual total sweep duration
-    long actual_sweep_duration_in_ns = 2000000;
-
     // sample index within a sweep
     int index = 0;
 
@@ -139,12 +152,6 @@ public class EPFragment extends Fragment {
 
     // separator for the data file
     private byte dataSeparator = AttysComm.DATA_SEPARATOR_TAB;
-
-    // used to calc the actual sampling interval
-    long nanoTime = 0;
-    long prev_nano_time = 0;
-    long dt_avg;
-    int ignoreCtr = 100;
 
     // overall highpass mainly to avoid eyeblinks and DC drift
     Butterworth highpass;
@@ -198,9 +205,10 @@ public class EPFragment extends Fragment {
             initSound();
 
             while (doRun) {
-                long t0 = System.nanoTime();
-
                 while (doRun && doSweeps) {
+                    while ((!stimFlag)&&(doRun)) {
+                        yield();
+                    }
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
@@ -212,10 +220,6 @@ public class EPFragment extends Fragment {
                             } catch (IllegalStateException e) {}
                         }
                     }).start();
-                    while ((t0 - System.nanoTime()) > 0) {
-                        yield();
-                    }
-                    t0 = t0 + actual_sweep_duration_in_ns;
                 }
                 while ((!doSweeps) && (doRun)) {
                     yield();
@@ -261,13 +265,12 @@ public class EPFragment extends Fragment {
 
             // endless stimulation loop
             while (doRun) {
-                // we record the absolute time and
-                // then we add our stimulation interval and wait
-                long t0 = System.nanoTime();
-
                 // this loop runs as long as we stimuate and
                 // falls through when we stop
                 while (doRun && doSweeps) {
+                    while ((!stimFlag)&&(doRun)) {
+                        yield();
+                    }
                     getActivity().runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -279,10 +282,6 @@ public class EPFragment extends Fragment {
                             inverted = !inverted;
                         }
                     });
-                    while ((t0 - System.nanoTime()) > 0) {
-                        yield();
-                    }
-                    t0 = t0 + actual_sweep_duration_in_ns;
                 }
 
                 // falls through when stim is not on
@@ -316,7 +315,6 @@ public class EPFragment extends Fragment {
         samplingRate = _samplingrate;
         final long CONST1E9 = 1000000000;
         samplingInterval_ns = CONST1E9 / _samplingrate;
-        dt_avg = samplingInterval_ns;
     }
 
     // sets the background layer of the visual stimulus
@@ -333,6 +331,9 @@ public class EPFragment extends Fragment {
 
     // starts the sweeps
     public void startSweeps() {
+        timer = new Timer();
+        StartSweepTask startSweepTask = new StartSweepTask();
+        timer.schedule(startSweepTask, 0, sweep_duration_us/1000);
         nSweeps = 1;
         showSweeps();
         index = 0;
@@ -342,6 +343,7 @@ public class EPFragment extends Fragment {
 
     // stops them
     public void stopSweeps() {
+        timer.cancel();
         if (toggleButtonDoSweep != null) {
             toggleButtonDoSweep.setChecked(false);
         }
@@ -412,10 +414,6 @@ public class EPFragment extends Fragment {
         } else {
             epPlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 100);
         }
-
-        nanoTime = System.nanoTime() + samplingInterval_ns;
-        prev_nano_time = System.nanoTime();
-        ignoreCtr = 100;
 
         epPlot.setTitle(string_ep_modes[mode]);
         epHistorySeries.setTitle(string_ep_modes[mode] + "/\u03bcV");
@@ -545,21 +543,6 @@ public class EPFragment extends Fragment {
             visualStimulusGenerator.cancel();
         }
     }
-
-    // called when a sample arrives and is used to measure
-    // the actual sampling rate and the actual sweep duration
-    public void tick() {
-        prev_nano_time = nanoTime;
-        nanoTime = System.nanoTime();
-        long dt_real = nanoTime - prev_nano_time;
-        if (ignoreCtr > 0) {
-            ignoreCtr--;
-            return;
-        }
-        dt_avg = dt_avg + ((dt_real - dt_avg) / samplingRate / 50);
-        actual_sweep_duration_in_ns = dt_avg * nSamples;
-    }
-
 
     private void writeEPfile() throws IOException {
 
@@ -713,16 +696,8 @@ public class EPFragment extends Fragment {
         if (index < epHistorySeries.size()) {
             epHistorySeries.setY(avg, index);
         }
-        index++;
-        if (index == nSamples) {
-            nSweeps++;
-            index = 0;
-            acceptData = doSweeps;
-            if (doSweeps) {
-                showSweeps();
-            }
-            epPlot.redraw();
-
+        if (index < (nSamples-1)) {
+            index++;
         }
     }
 }

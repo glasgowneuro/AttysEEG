@@ -277,13 +277,13 @@ public class AttysEEG extends AppCompatActivity {
         @Override
         public void gotData(long l, float[] f) {
             if (epFragment != null) {
-                epFragment.tick();
+                epFragment.addValue(f[AttysComm.INDEX_Analogue_channel_1]);
             }
         }
     };
 
 
-            DataRecorder dataRecorder = new DataRecorder();
+    DataRecorder dataRecorder = new DataRecorder();
 
     Handler handler = new Handler() {
         @Override
