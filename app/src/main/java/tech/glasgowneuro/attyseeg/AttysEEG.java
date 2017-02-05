@@ -90,8 +90,8 @@ public class AttysEEG extends AppCompatActivity {
     private float deltaFhigh = 4;
     private float gammaFlow = 30;
 
-    private double notchBW = 2.5; // Hz
-    private int notchOrder = 2;
+    public static final double notchBW = 2.5; // Hz
+    public static final int notchOrder = 2;
 
     // Fragments
     // add yours here !
@@ -472,9 +472,6 @@ public class AttysEEG extends AppCompatActivity {
 
                             // fragements!
                             // add yours here
-                            if (epFragment != null) {
-                                epFragment.addValue((float) filteredEEG);
-                            }
                             if (betaRatioFragment != null) {
                                 betaRatioFragment.addValue((float) filteredEEG);
                             }
