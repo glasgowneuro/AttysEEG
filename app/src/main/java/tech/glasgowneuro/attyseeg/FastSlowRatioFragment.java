@@ -73,7 +73,10 @@ public class FastSlowRatioFragment extends Fragment {
             47,     // fast/slow
             20      // beta ratio
     };
-    float smoothFreq = 0.1F;
+    float smoothFreq[] = {
+            0.01F,
+            0.1F
+    };
 
     final int nSampleBufferSize = 100;
 
@@ -163,8 +166,8 @@ public class FastSlowRatioFragment extends Fragment {
         lowpassFilterEEGband.lowPass(2, samplingRate, bandHigh[mode]);
         highpassfilterEEGall.highPass(2, samplingRate, allLow[mode]);
         lowpassFilterEEGall.lowPass(2, samplingRate, allHigh[mode]);
-        smoothBand.lowPass(2, samplingRate, smoothFreq);
-        smoothAll.lowPass(2, samplingRate, smoothFreq);
+        smoothBand.lowPass(2, samplingRate, smoothFreq[mode]);
+        smoothAll.lowPass(2, samplingRate, smoothFreq[mode]);
 
         ready = true;
     }

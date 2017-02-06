@@ -80,7 +80,7 @@ public class EPFragment extends Fragment {
     // powerline frequency
     private float powerlineF = 50;
 
-    private final int mainsNotchOrder = 4;
+    private final int mainsNotchOrder = 2;
     private final float mainsNotchBW = 5;
 
     static private Butterworth notch_mains_fundamental = null;
@@ -651,6 +651,10 @@ public class EPFragment extends Fragment {
 
         if (!ready) return;
 
+        double v2 = highpass.filter(v * 1E6);
+        v2 = notch_mains_fundamental.filter(v2);
+        v2 = notch_mains_1st_harmonic.filter(v2);
+
         if (!acceptData) return;
 
         if (epHistorySeries == null) {
@@ -659,10 +663,6 @@ public class EPFragment extends Fragment {
             }
             return;
         }
-
-        double v2 = highpass.filter(v * 1E6);
-        v2 = notch_mains_fundamental.filter(v2);
-        v2 = notch_mains_1st_harmonic.filter(v2);
 
         if (index < epHistorySeries.size()) {
             double avg = epHistorySeries.getY(index).doubleValue();
