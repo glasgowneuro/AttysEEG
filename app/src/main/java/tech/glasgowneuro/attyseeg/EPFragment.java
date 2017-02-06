@@ -68,41 +68,23 @@ public class EPFragment extends Fragment {
     };
 
     // this is our desired sweep duration
-    int SWEEP_DURATION_US_WITHOUT_CORRECTION = 500000;
+    private final static int SWEEP_DURATION_US_WITHOUT_CORRECTION = 500000;
 
-    // this is our actual sweep duration derived
-    // from the RTC and measuring the time between samples
-    int sweep_duration_us;
+    // with anti alias stuff
+    private static int sweep_duration_us;
 
     Timer timer = null;
 
-    StartSweepTask startSweepTask = null;
-
-    boolean stimFlag = false;
-
-    private class StartSweepTask extends TimerTask {
-
-        public synchronized void run() {
-            epPlot.redraw();
-            if (!doSweeps) {
-                acceptData = false;
-                return;
-            }
-            nSweeps++;
-            showSweeps();
-            stimFlag = true;
-            index = 0;
-        }
-    }
+    private static StartSweepTask startSweepTask = null;
 
     // powerline frequency
-    float powerlineF = 50;
+    private float powerlineF = 50;
 
-    int mainsNotchOrder = 4;
-    float mainsNotchBW = 5;
+    private final int mainsNotchOrder = 4;
+    private final float mainsNotchBW = 5;
 
-    private Butterworth notch_mains_fundamental = null;
-    private Butterworth notch_mains_1st_harmonic = null;
+    static private Butterworth notch_mains_fundamental = null;
+    static private Butterworth notch_mains_1st_harmonic = null;
 
     // set the powerline frequency
     void setPowerlineF(float _powerlineF) {
@@ -116,8 +98,8 @@ public class EPFragment extends Fragment {
     private SimpleXYSeries epHistorySeries = null;
 
     // the checkerboards hosted by the main UI
-    private StimulusView stimulusView1 = null;
-    private StimulusView stimulusView2 = null;
+    static private StimulusView stimulusView1 = null;
+    static private StimulusView stimulusView2 = null;
 
     // keeps the sweep numbers
     private TextView sweepNoText = null;
@@ -145,20 +127,20 @@ public class EPFragment extends Fragment {
     long samplingInterval_ns = 1;
 
     // sample index within a sweep
-    int index = 0;
+    static int index = 0;
 
     // number of sweeps
-    int nSweeps = 1;
+    static int nSweeps = 1;
 
     // ignore samples when it's false
     // used for startup
-    boolean ready = false;
+    static boolean ready = false;
 
     // it's written on the tin
-    boolean doSweeps = false;
+    static boolean doSweeps = false;
 
     // when true data is added to the averaging array
-    boolean acceptData = false;
+    static boolean acceptData = false;
 
     // filename
     private String dataFilename = null;
@@ -167,7 +149,7 @@ public class EPFragment extends Fragment {
     private byte dataSeparator = AttysComm.DATA_SEPARATOR_TAB;
 
     // overall highpass mainly to avoid eyeblinks and DC drift
-    Butterworth highpass;
+    static Butterworth highpass;
 
     // selects the stim mode
     private Spinner spinnerMode;
@@ -182,18 +164,16 @@ public class EPFragment extends Fragment {
     // stimulus generator for audio
     // uses the variables from the parent class to
     // start/stop the stim and timing
-    class AudioStimulusGenerator implements Runnable {
-
-        boolean doRun = true;
+    static class AudioStimulusGenerator {
 
         // audio
-        private AudioTrack sound;
+        static private AudioTrack sound;
         private byte[] rawAudio;
         int audioSamplingRate = 44100;
         int clickduration = audioSamplingRate / 1000; // 1ms
         int nAudioSamples = clickduration * 3;
 
-        public void initSound() {
+        public AudioStimulusGenerator() {
             sound = new AudioTrack(AudioManager.STREAM_MUSIC,
                     audioSamplingRate,
                     AudioFormat.CHANNEL_OUT_MONO,
@@ -212,33 +192,17 @@ public class EPFragment extends Fragment {
             sound.write(rawAudio, 0, rawAudio.length);
         }
 
-        @Override
-        public void run() {
-
-            initSound();
-
-            while (doRun) {
-                while (doRun && doSweeps) {
-                    while ((!stimFlag) && (doRun)) {
-                        yield();
-                    }
-                    try {
-                        sound.pause();
-                        sound.flush();
-                        sound.reloadStaticData();
-                        sound.play();
-                    } catch (IllegalStateException e) {
-                    }
-                    stimFlag = false;
-                }
-                while ((!doSweeps) && (doRun)) {
-                    yield();
-                }
+        static synchronized public void stim() {
+            try {
+                sound.pause();
+                sound.flush();
+                sound.reloadStaticData();
+                sound.play();
+            } catch (IllegalStateException e) {
             }
         }
 
-        public void cancel() {
-            doRun = false;
+        public void closeAudio() {
             sound.release();
         }
     }
@@ -247,12 +211,11 @@ public class EPFragment extends Fragment {
     // stimulus generator for the checkerboard
     // uses the variables from the parent class to
     // start/stop the stim and timing
-    class VisualStimulusGenerator implements Runnable {
+    class VisualStimulusGenerator {
 
-        boolean doRun = true;
         boolean inverted = false;
 
-        void setInvisible() {
+        public void setInvisible() {
             if (getActivity() != null) {
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
@@ -268,57 +231,30 @@ public class EPFragment extends Fragment {
             }
         }
 
-        @Override
-        public void run() {
-
-            inverted = false;
-
-            // endless stimulation loop
-            while (doRun) {
-                // this loop runs as long as we stimuate and
-                // falls through when we stop
-                while (doRun && doSweeps) {
-                    while ((!stimFlag) && (doRun)) {
-                        yield();
-                    }
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
+        public void stim() {
+            if ((stimulusView1 != null) && (stimulusView2 != null) && (getActivity() != null)){
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (doSweeps) {
                             if (inverted) {
                                 stimulusView2.setVisibility(View.INVISIBLE);
                             } else {
                                 stimulusView2.setVisibility(View.VISIBLE);
                             }
+                            stimulusView1.setVisibility(View.VISIBLE);
                             inverted = !inverted;
-                        }
-                    });
-                    stimFlag = false;
-                }
-
-                // falls through when stim is not on
-                setInvisible();
-                while ((!doSweeps) && (doRun)) {
-                    yield();
-                }
-
-                // here we arrive when the stimulation starts
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
+                        } else {
                             if (stimulusView1 != null) {
-                                stimulusView1.setVisibility(View.VISIBLE);
+                                stimulusView1.setVisibility(View.INVISIBLE);
+                            }
+                            if (stimulusView2 != null) {
+                                stimulusView2.setVisibility(View.INVISIBLE);
                             }
                         }
-                    });
-                }
+                    }
+                });
             }
-            setInvisible();
-        }
-
-        public void cancel() {
-            doRun = false;
-            setInvisible();
         }
     }
 
@@ -344,9 +280,28 @@ public class EPFragment extends Fragment {
         stimulusView2.setInverted(true);
     }
 
+    private class StartSweepTask extends TimerTask {
+
+        public synchronized void run() {
+            epPlot.redraw();
+            if (!doSweeps) {
+                acceptData = false;
+                return;
+            }
+            nSweeps++;
+            showSweeps();
+            index = 0;
+            if (audioStimulusGenerator != null) {
+                audioStimulusGenerator.stim();
+            }
+            if (visualStimulusGenerator != null) {
+                visualStimulusGenerator.stim();
+            }
+        }
+    }
+
     // starts the sweeps
     public void startSweeps() {
-        nSweeps = 1;
         showSweeps();
         index = 0;
         acceptData = true;
@@ -359,6 +314,7 @@ public class EPFragment extends Fragment {
             toggleButtonDoSweep.setChecked(false);
         }
         doSweeps = false;
+        setStimInvisible();
     }
 
     private void setStimInvisible() {
@@ -381,13 +337,8 @@ public class EPFragment extends Fragment {
 
         stopSweeps();
 
-        setStimInvisible();
-
-        if (audioStimulusGenerator != null) {
-            audioStimulusGenerator.cancel();
-        }
         if (visualStimulusGenerator != null) {
-            visualStimulusGenerator.cancel();
+            visualStimulusGenerator.setInvisible();
         }
 
         audioStimulusGenerator = null;
@@ -396,11 +347,9 @@ public class EPFragment extends Fragment {
         switch (mode) {
             case MODE_VEP:
                 visualStimulusGenerator = new VisualStimulusGenerator();
-                new Thread(visualStimulusGenerator).start();
                 break;
             case MODE_AEP:
                 audioStimulusGenerator = new AudioStimulusGenerator();
-                new Thread(audioStimulusGenerator).start();
                 break;
         }
 
@@ -408,9 +357,9 @@ public class EPFragment extends Fragment {
         highpass.highPass(2, samplingRate, highpassFreq[mode]);
 
         notch_mains_fundamental = new Butterworth();
-        notch_mains_fundamental.bandStop(mainsNotchOrder,samplingRate, powerlineF, mainsNotchBW);
+        notch_mains_fundamental.bandStop(mainsNotchOrder, samplingRate, powerlineF, mainsNotchBW);
         notch_mains_1st_harmonic = new Butterworth();
-        notch_mains_1st_harmonic.bandStop(mainsNotchOrder,samplingRate, powerlineF * 2, mainsNotchBW);
+        notch_mains_1st_harmonic.bandStop(mainsNotchOrder, samplingRate, powerlineF * 2, mainsNotchBW);
 
         nSamples = samplingRate * sweep_duration_us / 1000000;
         float tmax = nSamples * (1.0F / ((float) samplingRate));
@@ -429,7 +378,6 @@ public class EPFragment extends Fragment {
         nSweeps = 0;
         showSweeps();
         nSweeps++;
-        stimFlag = false;
 
         DisplayMetrics metrics = new DisplayMetrics();
         getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
@@ -544,7 +492,7 @@ public class EPFragment extends Fragment {
 
         timer = new Timer();
         startSweepTask = new StartSweepTask();
-        timer.schedule(startSweepTask, 0, sweep_duration_us / 1000);
+        timer.schedule(startSweepTask, sweep_duration_us / 1000, sweep_duration_us / 1000);
 
         return view;
     }
@@ -560,10 +508,10 @@ public class EPFragment extends Fragment {
         super.onDestroy();
 
         if (audioStimulusGenerator != null) {
-            audioStimulusGenerator.cancel();
+            audioStimulusGenerator.closeAudio();
         }
         if (visualStimulusGenerator != null) {
-            visualStimulusGenerator.cancel();
+            visualStimulusGenerator.setInvisible();
         }
 
         timer.cancel();
@@ -712,13 +660,15 @@ public class EPFragment extends Fragment {
             return;
         }
 
+        double v2 = highpass.filter(v * 1E6);
+        v2 = notch_mains_fundamental.filter(v2);
+        v2 = notch_mains_1st_harmonic.filter(v2);
+
         if (index < epHistorySeries.size()) {
             double avg = epHistorySeries.getY(index).doubleValue();
-            double v2 = highpass.filter(v * 1E6);
-            v2 = notch_mains_fundamental.filter(v2);
-            v2 = notch_mains_1st_harmonic.filter(v2);
             double nSweepsD = (double) nSweeps;
             avg = ((nSweepsD - 1) / nSweepsD) * avg + (1 / nSweepsD) * v2;
+            //avg = v2;
             epHistorySeries.setY(avg, index);
             index++;
         }
