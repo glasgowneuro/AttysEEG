@@ -66,7 +66,7 @@ public class FastSlowRatioFragment extends Fragment {
             47      // beta ratio
     };
     float allLow[] = {
-            1,      // fast/slow
+            0.5F,      // fast/slow
             11      // beta ratio
     };
     float allHigh[] = {
