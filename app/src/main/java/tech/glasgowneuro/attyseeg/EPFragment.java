@@ -698,9 +698,7 @@ public class EPFragment extends Fragment {
         }
     }
 
-    // adds samples from the main UI usually in batches
-    // so cannot be used for sampling rate estimation
-    // but less comp demanding
+    // adds samples
     public void addValue(float v) {
 
         if (!ready) return;
@@ -714,16 +712,13 @@ public class EPFragment extends Fragment {
             return;
         }
 
-        //Log.d(TAG," "+v);
         if (index < epHistorySeries.size()) {
             double avg = epHistorySeries.getY(index).doubleValue();
             double v2 = highpass.filter(v * 1E6);
             v2 = notch_mains_fundamental.filter(v2);
             v2 = notch_mains_1st_harmonic.filter(v2);
-
             double nSweepsD = (double) nSweeps;
             avg = ((nSweepsD - 1) / nSweepsD) * avg + (1 / nSweepsD) * v2;
-            avg = v2;
             epHistorySeries.setY(avg, index);
             index++;
         }
