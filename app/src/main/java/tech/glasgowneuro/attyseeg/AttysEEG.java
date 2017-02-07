@@ -171,7 +171,6 @@ public class AttysEEG extends AppCompatActivity {
         private File textdataFile = null;
         private byte data_separator = AttysComm.DATA_SEPARATOR_TAB;
         float samplingInterval = 0;
-        float bpm = 0;
         File file = null;
 
         // starts the recording
@@ -221,10 +220,6 @@ public class AttysEEG extends AppCompatActivity {
 
         public byte getDataSeparator() {
             return data_separator;
-        }
-
-        public void setBPM(float _bpm) {
-            bpm = _bpm;
         }
 
         private void saveData(float rawEEG,

@@ -48,8 +48,6 @@ public class FastSlowRatioFragment extends Fragment {
 
     String TAG = "FastSlowRatioFragment";
 
-    String title = "log(Power of Fast/Slow)";
-
     public static final String[] string_fastslow_modes = {
             "FastSlow",
             "BetaRatio"
@@ -126,17 +124,6 @@ public class FastSlowRatioFragment extends Fragment {
 
     public void setSamplingrate(int _samplingrate) {
         samplingRate = _samplingrate;
-    }
-
-    public void stopPlotting() {
-        if (timer != null) {
-            timer.cancel();
-        }
-        if (toggleButtonDoRecord != null) {
-            toggleButtonDoRecord.setChecked(false);
-        }
-        timer = null;
-        acceptData = false;
     }
 
     private void reset() {

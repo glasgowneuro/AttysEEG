@@ -66,16 +66,6 @@ public class InfoView extends SurfaceView implements SurfaceHolder.Callback {
         paintSmall.setColor(Color.argb(128, 0, 255, 0));
     }
 
-    public void removeText() {
-        canvas = holder.lockCanvas();
-        if (canvas != null) {
-            Paint paint = new Paint();
-            paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-            canvas.drawPaint(paint);
-        }
-        holder.unlockCanvasAndPost(canvas);
-    }
-
     public int getInfoHeight() {
         return textHeight;
     }

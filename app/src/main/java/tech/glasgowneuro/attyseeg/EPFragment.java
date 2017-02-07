@@ -44,8 +44,6 @@ import java.util.TimerTask;
 import tech.glasgowneuro.attyscomm.AttysComm;
 import uk.me.berndporr.iirj.Butterworth;
 
-import static java.lang.Thread.yield;
-
 /**
  * Evoked potentials Fragment
  */
@@ -121,10 +119,6 @@ public class EPFragment extends Fragment {
 
     // samplingrate of the Attys
     int samplingRate;
-
-    // actual sampling interval in ns for the
-    // stimulus generator
-    long samplingInterval_ns = 1;
 
     // sample index within a sweep
     static int index = 0;
@@ -265,7 +259,6 @@ public class EPFragment extends Fragment {
     public void setSamplingrate(int _samplingrate) {
         samplingRate = _samplingrate;
         final long CONST1E9 = 1000000000;
-        samplingInterval_ns = CONST1E9 / _samplingrate;
     }
 
     // sets the background layer of the visual stimulus
