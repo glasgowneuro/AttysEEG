@@ -37,7 +37,6 @@ import java.io.PrintWriter;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import tech.glasgowneuro.attyscomm.AttysComm;
 import uk.me.berndporr.iirj.Butterworth;
 
 /**
@@ -120,7 +119,7 @@ public class FastSlowRatioFragment extends Fragment {
 
     private String dataFilename = null;
 
-    private byte dataSeparator = AttysComm.DATA_SEPARATOR_TAB;
+    private byte dataSeparator = AttysEEG.DataRecorder.DATA_SEPARATOR_TAB;
 
     public void setSamplingrate(int _samplingrate) {
         samplingRate = _samplingrate;
@@ -291,13 +290,13 @@ public class FastSlowRatioFragment extends Fragment {
 
         char s = ' ';
         switch (dataSeparator) {
-            case AttysComm.DATA_SEPARATOR_SPACE:
+            case AttysEEG.DataRecorder.DATA_SEPARATOR_SPACE:
                 s = ' ';
                 break;
-            case AttysComm.DATA_SEPARATOR_COMMA:
+            case AttysEEG.DataRecorder.DATA_SEPARATOR_COMMA:
                 s = ',';
                 break;
-            case AttysComm.DATA_SEPARATOR_TAB:
+            case AttysEEG.DataRecorder.DATA_SEPARATOR_TAB:
                 s = 9;
                 break;
         }
@@ -353,13 +352,13 @@ public class FastSlowRatioFragment extends Fragment {
                         dataFilename = dataFilename.replaceAll("[^a-zA-Z0-9.-]", "_");
                         if (!dataFilename.contains(".")) {
                             switch (dataSeparator) {
-                                case AttysComm.DATA_SEPARATOR_COMMA:
+                                case AttysEEG.DataRecorder.DATA_SEPARATOR_COMMA:
                                     dataFilename = dataFilename + ".csv";
                                     break;
-                                case AttysComm.DATA_SEPARATOR_SPACE:
+                                case AttysEEG.DataRecorder.DATA_SEPARATOR_SPACE:
                                     dataFilename = dataFilename + ".dat";
                                     break;
-                                case AttysComm.DATA_SEPARATOR_TAB:
+                                case AttysEEG.DataRecorder.DATA_SEPARATOR_TAB:
                                     dataFilename = dataFilename + ".tsv";
                             }
                         }

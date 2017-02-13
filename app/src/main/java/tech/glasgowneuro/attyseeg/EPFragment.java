@@ -66,10 +66,13 @@ public class EPFragment extends Fragment {
     };
 
     // this is our desired sweep duration
-    private final static int SWEEP_DURATION_US_WITHOUT_CORRECTION = 500000;
+    private final static int[] SWEEP_DURATION_US_WITHOUT_CORRECTION = {
+            750000, //VEP
+            500000  //AEP
+    };
 
     // with anti alias stuff
-    private static int sweep_duration_us;
+    private static int sweep_duration_us = SWEEP_DURATION_US_WITHOUT_CORRECTION[0];
 
     Timer timer = null;
 
@@ -140,7 +143,7 @@ public class EPFragment extends Fragment {
     private String dataFilename = null;
 
     // separator for the data file
-    private byte dataSeparator = AttysComm.DATA_SEPARATOR_TAB;
+    private byte dataSeparator = AttysEEG.DataRecorder.DATA_SEPARATOR_TAB;
 
     // overall highpass mainly to avoid eyeblinks and DC drift
     static Butterworth highpass;
@@ -328,6 +331,10 @@ public class EPFragment extends Fragment {
     private void reset() {
         ready = false;
 
+        if (timer != null) {
+            timer.cancel();
+        }
+
         stopSweeps();
 
         if (visualStimulusGenerator != null) {
@@ -336,6 +343,9 @@ public class EPFragment extends Fragment {
 
         audioStimulusGenerator = null;
         visualStimulusGenerator = null;
+
+        sweep_duration_us = SWEEP_DURATION_US_WITHOUT_CORRECTION[mode] +
+                (int) (1000000.0 / powerlineF / 2.0);
 
         switch (mode) {
             case MODE_VEP:
@@ -388,6 +398,10 @@ public class EPFragment extends Fragment {
 
         setStimInvisible();
 
+        timer = new Timer();
+        startSweepTask = new StartSweepTask();
+        timer.schedule(startSweepTask, sweep_duration_us / 1000, sweep_duration_us / 1000);
+
         ready = true;
     }
 
@@ -407,8 +421,6 @@ public class EPFragment extends Fragment {
         if (container == null) {
             return null;
         }
-
-        sweep_duration_us = SWEEP_DURATION_US_WITHOUT_CORRECTION + (int) (1000000.0 / powerlineF / 2.0);
 
         view = inflater.inflate(R.layout.epfragment, container, false);
 
@@ -483,10 +495,6 @@ public class EPFragment extends Fragment {
 
         reset();
 
-        timer = new Timer();
-        startSweepTask = new StartSweepTask();
-        timer.schedule(startSweepTask, sweep_duration_us / 1000, sweep_duration_us / 1000);
-
         return view;
     }
 
@@ -531,13 +539,13 @@ public class EPFragment extends Fragment {
 
         char s = ' ';
         switch (dataSeparator) {
-            case AttysComm.DATA_SEPARATOR_SPACE:
+            case AttysEEG.DataRecorder.DATA_SEPARATOR_SPACE:
                 s = ' ';
                 break;
-            case AttysComm.DATA_SEPARATOR_COMMA:
+            case AttysEEG.DataRecorder.DATA_SEPARATOR_COMMA:
                 s = ',';
                 break;
-            case AttysComm.DATA_SEPARATOR_TAB:
+            case AttysEEG.DataRecorder.DATA_SEPARATOR_TAB:
                 s = 9;
                 break;
         }
@@ -593,13 +601,13 @@ public class EPFragment extends Fragment {
                         dataFilename = dataFilename.replaceAll("[^a-zA-Z0-9.-]", "_");
                         if (!dataFilename.contains(".")) {
                             switch (dataSeparator) {
-                                case AttysComm.DATA_SEPARATOR_COMMA:
+                                case AttysEEG.DataRecorder.DATA_SEPARATOR_COMMA:
                                     dataFilename = dataFilename + ".csv";
                                     break;
-                                case AttysComm.DATA_SEPARATOR_SPACE:
+                                case AttysEEG.DataRecorder.DATA_SEPARATOR_SPACE:
                                     dataFilename = dataFilename + ".dat";
                                     break;
-                                case AttysComm.DATA_SEPARATOR_TAB:
+                                case AttysEEG.DataRecorder.DATA_SEPARATOR_TAB:
                                     dataFilename = dataFilename + ".tsv";
                             }
                         }
