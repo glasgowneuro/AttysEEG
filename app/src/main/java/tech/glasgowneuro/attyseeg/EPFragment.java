@@ -61,13 +61,13 @@ public class EPFragment extends Fragment {
     };
 
     final float[] highpassFreq = {
-            0.5F, // VEP
+            1.0F, // VEP
             0.5F  // AEP
     };
 
     // this is our desired sweep duration
     private final static int[] SWEEP_DURATION_US_WITHOUT_CORRECTION = {
-            750000, //VEP
+            600000, //VEP
             500000  //AEP
     };
 
