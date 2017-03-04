@@ -1129,11 +1129,14 @@ public class AttysEEG extends AppCompatActivity {
         dataRecorder.setDataSeparator(data_separator);
 
         powerlineHz = Float.parseFloat(prefs.getString("powerline", "50"));
+        if (powerlineHz > 60) powerlineHz = 60;
         if (Log.isLoggable(TAG, Log.DEBUG)) {
             Log.d(TAG, "powerline=" + powerlineHz);
         }
 
-        samplingRate = (byte) Integer.parseInt(prefs.getString("samplingrate", "0"));
+        samplingRate = (byte) Integer.parseInt(prefs.getString("samplingrate", "1"));
+        if (samplingRate < AttysComm.ADC_RATE_250HZ) samplingRate = AttysComm.ADC_RATE_250HZ;
+        if (samplingRate > AttysComm.ADC_RATE_500Hz) samplingRate = AttysComm.ADC_RATE_500Hz;
         attysComm.setAdc_samplingrate_index(samplingRate);
     }
 

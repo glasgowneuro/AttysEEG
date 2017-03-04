@@ -40,7 +40,7 @@
 
     <string-array name="samplingRateOptions">
         <item>250Hz</item>
-        <item>500Hz</item>
+        <item>500Hz (experimental!)</item>
     </string-array>
     <string-array name="samplingRateValues">
         <item>1</item>
