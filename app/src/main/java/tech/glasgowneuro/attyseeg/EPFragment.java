@@ -16,7 +16,11 @@ import android.support.v4.app.Fragment;
 import android.support.v7.app.AlertDialog;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -24,6 +28,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -38,11 +43,16 @@ import com.androidplot.xy.XYPlot;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import tech.glasgowneuro.attyscomm.AttysComm;
 import uk.me.berndporr.iirj.Butterworth;
+
+import static tech.glasgowneuro.attyseeg.AttysEEG.ATTYSDIR;
 
 /**
  * Evoked potentials Fragment
@@ -111,9 +121,6 @@ public class EPFragment extends Fragment {
     // reset button to get rid of the sweeps
     private Button resetButton;
 
-    // saving the AEP data
-    private Button saveButton;
-
     // the view which hosts all the views above
     View view = null;
 
@@ -157,20 +164,23 @@ public class EPFragment extends Fragment {
     // tracks what the spinner has for a mode
     int spinner_mode = mode;
 
+    static private byte[] customAudioStimulus = null;
 
     // stimulus generator for audio
     // uses the variables from the parent class to
     // start/stop the stim and timing
-    static class AudioStimulusGenerator {
+    public static class AudioStimulusGenerator {
 
         // audio
         static private AudioTrack sound;
         private byte[] rawAudio;
-        int audioSamplingRate = 44100;
-        int clickduration = audioSamplingRate / 1000; // 1ms
-        int nAudioSamples = clickduration * 3;
+        public static final int audioSamplingRate = 44100;
+        public static final int clickduration = audioSamplingRate / 1000; // 1ms
+        public static final int nAudioSamples = clickduration * 3;
+        public static final int maxNAudioSamples =
+                (int) ((double) audioSamplingRate * SWEEP_DURATION_US_WITHOUT_CORRECTION[1]/1.0E6);
 
-        public AudioStimulusGenerator() {
+        public AudioStimulusGenerator(byte[] _customStimulus) {
             sound = new AudioTrack(AudioManager.STREAM_MUSIC,
                     audioSamplingRate,
                     AudioFormat.CHANNEL_OUT_MONO,
@@ -178,15 +188,19 @@ public class EPFragment extends Fragment {
                     nAudioSamples,
                     AudioTrack.MODE_STATIC);
             if (sound == null) return;
-            rawAudio = new byte[nAudioSamples];
-            for (int i = 0; i < nAudioSamples; i++) {
-                rawAudio[i] = (byte) 0x80;
+            if (_customStimulus == null) {
+                rawAudio = new byte[nAudioSamples];
+                for (int i = 0; i < nAudioSamples; i++) {
+                    rawAudio[i] = (byte) 0x80;
+                }
+                for (int i = 0; i < clickduration; i++) {
+                    rawAudio[i] = (byte) 0x00;
+                    rawAudio[i + clickduration] = (byte) 0xff;
+                }
+                sound.write(rawAudio, 0, rawAudio.length);
+            } else {
+                sound.write(_customStimulus, 0, _customStimulus.length);
             }
-            for (int i = 0; i < clickduration; i++) {
-                rawAudio[i] = (byte) 0x00;
-                rawAudio[i + clickduration] = (byte) 0xff;
-            }
-            sound.write(rawAudio, 0, rawAudio.length);
         }
 
         static synchronized public void stim() {
@@ -229,7 +243,7 @@ public class EPFragment extends Fragment {
         }
 
         public void stim() {
-            if ((stimulusView1 != null) && (stimulusView2 != null) && (getActivity() != null)){
+            if ((stimulusView1 != null) && (stimulusView2 != null) && (getActivity() != null)) {
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -352,7 +366,7 @@ public class EPFragment extends Fragment {
                 visualStimulusGenerator = new VisualStimulusGenerator();
                 break;
             case MODE_AEP:
-                audioStimulusGenerator = new AudioStimulusGenerator();
+                audioStimulusGenerator = new AudioStimulusGenerator(customAudioStimulus);
                 break;
         }
 
@@ -424,6 +438,8 @@ public class EPFragment extends Fragment {
 
         view = inflater.inflate(R.layout.epfragment, container, false);
 
+        setHasOptionsMenu(true);
+
         // setup the APR Levels plot:
         epPlot = (XYPlot) view.findViewById(R.id.bpmPlotView);
         sweepNoText = (TextView) view.findViewById(R.id.nsweepsTextView);
@@ -443,12 +459,6 @@ public class EPFragment extends Fragment {
             public void onClick(View v) {
                 mode = spinner_mode;
                 reset();
-            }
-        });
-        saveButton = (Button) view.findViewById(R.id.aepSave);
-        saveButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                saveEP();
             }
         });
 
@@ -498,6 +508,38 @@ public class EPFragment extends Fragment {
         return view;
     }
 
+
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+        inflater.inflate(R.menu.epoptions, menu);
+    }
+
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        switch (item.getItemId()) {
+            case R.id.epfragmentsave:
+                saveEP();
+                return true;
+
+            case R.id.epfragmentloadwav:
+                cumstomAudioDialogue();
+                return true;
+
+            case R.id.epdefaultstim:
+                customAudioStimulus = null;
+                return true;
+
+            default:
+                // If we got here, the user's action was not recognized.
+                // Invoke the superclass to handle it.
+                return super.onOptionsItemSelected(item);
+
+        }
+    }
+
+
     @Override
     public void onStop() {
         super.onStop();
@@ -527,7 +569,7 @@ public class EPFragment extends Fragment {
         File file;
 
         try {
-            file = new File(AttysEEG.ATTYSDIR, dataFilename.trim());
+            file = new File(ATTYSDIR, dataFilename.trim());
             file.createNewFile();
             if (Log.isLoggable(TAG, Log.DEBUG)) {
                 Log.d(TAG, "Saving AEP to " + file.getAbsolutePath());
@@ -565,6 +607,120 @@ public class EPFragment extends Fragment {
         Uri contentUri = Uri.fromFile(file);
         mediaScanIntent.setData(contentUri);
         getActivity().sendBroadcast(mediaScanIntent);
+    }
+
+
+    private void loadAudio(final String filename) {
+        File fp = new File(ATTYSDIR, filename);
+        try {
+            Scanner scanner = new Scanner(fp);
+            int n = 0;
+            customAudioStimulus = new byte[AudioStimulusGenerator.maxNAudioSamples];
+            while ((scanner.hasNext()) && (n < AudioStimulusGenerator.maxNAudioSamples)) {
+                int v = (int) (Float.parseFloat(scanner.next()));
+                v = v + 0x80;
+                customAudioStimulus[n] = (byte) (v & 0xff);
+                //Log.d(TAG, "n=" + n + " " + (customAudioStimulus[n] & 0xff));
+                n++;
+            }
+            while (n < AudioStimulusGenerator.maxNAudioSamples) {
+                customAudioStimulus[n] = (byte) 0x80;
+                n++;
+            }
+            getActivity().runOnUiThread(new Runnable() {
+                public void run() {
+                    Toast.makeText(getActivity(),
+                            "Successfully loaded '" + filename + "'",
+                            Toast.LENGTH_SHORT).show();
+                }
+            });
+        } catch (final Exception e) {
+            if (Log.isLoggable(TAG, Log.DEBUG)) {
+                Log.d(TAG, filename + " loading error", e);
+            }
+            getActivity().runOnUiThread(new Runnable() {
+                public void run() {
+                    Toast.makeText(getActivity(),
+                            "Error loading '" + filename + "': " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+    }
+
+
+    private void cumstomAudioDialogue() {
+
+        final int REQUEST_EXTERNAL_STORAGE = 1;
+        String[] PERMISSIONS_STORAGE = {
+                Manifest.permission.READ_EXTERNAL_STORAGE
+        };
+
+        int permission = ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.READ_EXTERNAL_STORAGE);
+
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                    getActivity(),
+                    PERMISSIONS_STORAGE,
+                    REQUEST_EXTERNAL_STORAGE
+            );
+        }
+
+        final List files = new ArrayList();
+        final String[] list = ATTYSDIR.list();
+        for (String file : list) {
+            if (files != null) {
+                if (file != null) {
+                    files.add(file);
+                }
+            }
+        }
+
+        final ListView listview = new ListView(getContext());
+        ArrayAdapter adapter = new ArrayAdapter(getContext(),
+                android.R.layout.simple_list_item_multiple_choice,
+                files);
+        listview.setAdapter(adapter);
+        listview.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
+
+        listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                view.setSelected(true);
+            }
+        });
+
+        new AlertDialog.Builder(getContext())
+                .setTitle("Load Stimulus")
+                .setMessage("Select filename. It needs to have one sample per row and less than n=" +
+                        AudioStimulusGenerator.maxNAudioSamples +
+                        " samples ranging between -127..127 at a sampling rate of fs=" +
+                        AudioStimulusGenerator.audioSamplingRate+".")
+                .setView(listview)
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        SparseBooleanArray checked = listview.getCheckedItemPositions();
+                        for (int i = 0; i < listview.getCount(); i++) {
+                            if (checked.get(i)) {
+                                final String filename = list[i];
+                                new Thread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        loadAudio(filename);
+                                    }
+                                }).start();
+                                if (Log.isLoggable(TAG, Log.DEBUG)) {
+                                    Log.d(TAG, "filename=" + filename);
+                                }
+                            }
+                        }
+                    }
+                })
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                    }
+                })
+                .show();
     }
 
 

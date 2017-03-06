@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:title="Evoked Potentials">
+        <menu>
+
+            <item
+                android:id="@+id/epfragmentsave"
+                android:title="Save evoked potential" />
+
+            <item
+                android:id="@+id/epfragmentloadwav"
+                android:title="Load audio stimulus" />
+
+            <item
+                android:id="@+id/epdefaultstim"
+                android:title="Default audio stimulus (click)" />
+
+        </menu>
+
+    </item>
+
+</menu>

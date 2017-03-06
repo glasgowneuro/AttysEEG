@@ -33,13 +33,6 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content" />
 
-            <Button
-                android:layout_weight="1"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:text="save"
-                android:id="@+id/aepSave" />
-
             <TextView
                 android:layout_width="0dp"
                 android:layout_weight="0.5"
