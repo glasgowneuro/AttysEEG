@@ -6,7 +6,6 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -144,7 +143,7 @@ public class BarGraphFragment extends Fragment {
             public void drawLabel(Canvas canvas, XYGraphWidget.LineLabelStyle style, Number val, float x, float y, boolean isOrigin) {
                 final int canvasState = canvas.save();
                 try {
-                    String txt = new String();
+                    String txt = "";
                     switch (val.intValue()) {
                         case 0:
                             txt = "\u03b4"; // delta

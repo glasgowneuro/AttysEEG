@@ -49,7 +49,6 @@ import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import tech.glasgowneuro.attyscomm.AttysComm;
 import uk.me.berndporr.iirj.Butterworth;
 
 import static tech.glasgowneuro.attyseeg.AttysEEG.ATTYSDIR;
@@ -60,7 +59,7 @@ import static tech.glasgowneuro.attyseeg.AttysEEG.ATTYSDIR;
 
 public class EPFragment extends Fragment {
 
-    String TAG = "EPFragment";
+    static final String TAG = "EPFragment";
 
     static final int MODE_VEP = 0;
     static final int MODE_AEP = 1;
@@ -177,18 +176,20 @@ public class EPFragment extends Fragment {
         public static final int audioSamplingRate = 44100;
         public static final int clickduration = audioSamplingRate / 1000; // 1ms
         public static final int nAudioSamples = clickduration * 3;
+        // let's assume the worse case: 20ms latency to trigger the sound
         public static final int maxNAudioSamples =
-                (int) ((double) audioSamplingRate * SWEEP_DURATION_US_WITHOUT_CORRECTION[1]/1.0E6);
+                (int) ((double) audioSamplingRate *
+                        (SWEEP_DURATION_US_WITHOUT_CORRECTION[1]-20000) / 1.0E6);
 
         public AudioStimulusGenerator(byte[] _customStimulus) {
-            sound = new AudioTrack(AudioManager.STREAM_MUSIC,
-                    audioSamplingRate,
-                    AudioFormat.CHANNEL_OUT_MONO,
-                    AudioFormat.ENCODING_PCM_8BIT,
-                    nAudioSamples,
-                    AudioTrack.MODE_STATIC);
-            if (sound == null) return;
             if (_customStimulus == null) {
+                sound = new AudioTrack(AudioManager.STREAM_MUSIC,
+                        audioSamplingRate,
+                        AudioFormat.CHANNEL_OUT_MONO,
+                        AudioFormat.ENCODING_PCM_8BIT,
+                        nAudioSamples,
+                        AudioTrack.MODE_STATIC);
+                if (sound == null) return;
                 rawAudio = new byte[nAudioSamples];
                 for (int i = 0; i < nAudioSamples; i++) {
                     rawAudio[i] = (byte) 0x80;
@@ -199,7 +200,17 @@ public class EPFragment extends Fragment {
                 }
                 sound.write(rawAudio, 0, rawAudio.length);
             } else {
+                sound = new AudioTrack(AudioManager.STREAM_MUSIC,
+                        audioSamplingRate,
+                        AudioFormat.CHANNEL_OUT_MONO,
+                        AudioFormat.ENCODING_PCM_8BIT,
+                        _customStimulus.length,
+                        AudioTrack.MODE_STATIC);
+                if (sound == null) return;
                 sound.write(_customStimulus, 0, _customStimulus.length);
+//                for(byte sample : _customStimulus) {
+//                    Log.d(TAG," "+(sample & 0xff));
+//                }
             }
         }
 
@@ -617,7 +628,7 @@ public class EPFragment extends Fragment {
             int n = 0;
             customAudioStimulus = new byte[AudioStimulusGenerator.maxNAudioSamples];
             while ((scanner.hasNext()) && (n < AudioStimulusGenerator.maxNAudioSamples)) {
-                int v = (int) (Float.parseFloat(scanner.next()));
+                int v = (int) (127.0 * Float.parseFloat(scanner.next()));
                 v = v + 0x80;
                 customAudioStimulus[n] = (byte) (v & 0xff);
                 //Log.d(TAG, "n=" + n + " " + (customAudioStimulus[n] & 0xff));
@@ -691,11 +702,12 @@ public class EPFragment extends Fragment {
         });
 
         new AlertDialog.Builder(getContext())
-                .setTitle("Load Stimulus")
-                .setMessage("Select filename. It needs to have one sample per row and less than n=" +
+                .setTitle("Loading custom stimulus for AEP")
+                .setMessage("Select a filename. " +
+                        "It needs to have one sample per row and less or qual than n=" +
                         AudioStimulusGenerator.maxNAudioSamples +
-                        " samples ranging between -127..127 at a sampling rate of fs=" +
-                        AudioStimulusGenerator.audioSamplingRate+".")
+                        " samples ranging between -0..+1 at a sampling rate of fs=" +
+                        AudioStimulusGenerator.audioSamplingRate + ".")
                 .setView(listview)
                 .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
