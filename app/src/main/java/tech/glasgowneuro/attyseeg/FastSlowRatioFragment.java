@@ -254,10 +254,12 @@ public class FastSlowRatioFragment extends Fragment {
         int width = metrics.widthPixels;
         int height = metrics.heightPixels;
 
-        if ((height > 1000) && (width > 1000)) {
+        Screensize screensize = new Screensize(getActivity().getWindowManager());
+
+        if (screensize.isTablet()) {
             fastSlowPlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 10);
         } else {
-            fastSlowPlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 30);
+            fastSlowPlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 20);
         }
 
         fastSlowHistorySeries.setTitle(string_fastslow_modes[mode]);

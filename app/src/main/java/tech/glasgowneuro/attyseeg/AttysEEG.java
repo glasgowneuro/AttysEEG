@@ -10,7 +10,6 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -1044,10 +1043,17 @@ public class AttysEEG extends AppCompatActivity {
 
 
     private void showPlotFragment() {
+
+        Screensize screensize = new Screensize(getWindowManager());
+        float mainplotWeight = 0.65f;
+        if (screensize.isMobile()) {
+            mainplotWeight = 1.5f;
+        }
+
         FrameLayout frameLayout = (FrameLayout) findViewById(R.id.mainplotlayout);
         frameLayout.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.MATCH_PARENT, 0.65f));
+                LinearLayout.LayoutParams.MATCH_PARENT, mainplotWeight));
 
         frameLayout = (FrameLayout) findViewById(R.id.fragment_plot_container);
         frameLayout.setLayoutParams(new LinearLayout.LayoutParams(
