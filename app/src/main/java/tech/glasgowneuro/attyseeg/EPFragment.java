@@ -407,11 +407,8 @@ public class EPFragment extends Fragment {
         showSweeps();
         nSweeps++;
 
-        DisplayMetrics metrics = new DisplayMetrics();
-        getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        int width = metrics.widthPixels;
-        int height = metrics.heightPixels;
-        if ((height > 1000) && (width > 1000)) {
+        Screensize screensize = new Screensize(getActivity().getWindowManager());
+        if (screensize.isTablet()) {
             epPlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 50);
         } else {
             epPlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 100);

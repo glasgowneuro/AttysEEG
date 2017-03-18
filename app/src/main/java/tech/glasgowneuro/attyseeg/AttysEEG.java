@@ -1033,6 +1033,13 @@ public class AttysEEG extends AppCompatActivity {
                 shareData();
                 return true;
 
+            case R.id.sourcecode:
+                String url = "https://github.com/glasgowneuro/AttysEEG";
+                Intent i = new Intent(Intent.ACTION_VIEW);
+                i.setData(Uri.parse(url));
+                startActivity(i);
+                return true;
+
             default:
                 // If we got here, the user's action was not recognized.
                 // Invoke the superclass to handle it.

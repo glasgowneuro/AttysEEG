@@ -179,11 +179,6 @@ public class BarGraphFragment extends Fragment {
         BarRenderer renderer = barPlot.getRenderer(BarRenderer.class);
         renderer.setBarGroupWidth(BarRenderer.BarGroupWidthMode.FIXED_GAP,1);
 
-        //DisplayMetrics metrics = new DisplayMetrics();
-        //getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        //int width = metrics.widthPixels;
-        //int height = metrics.heightPixels;
-
         smoothAlpha = new Butterworth();
         smoothDelta = new Butterworth();
         smoothGamma = new Butterworth();

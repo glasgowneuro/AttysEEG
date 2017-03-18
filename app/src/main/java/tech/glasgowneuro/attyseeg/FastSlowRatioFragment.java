@@ -195,6 +195,7 @@ public class FastSlowRatioFragment extends Fragment {
                 }
             }
         });
+        toggleButtonDoRecord.setChecked(true);
         resetButton = (Button) view.findViewById(R.id.fastSlowReset);
         resetButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -248,11 +249,6 @@ public class FastSlowRatioFragment extends Fragment {
 
         fastSlowPlot.setDomainLabel("t/sec");
         fastSlowPlot.setRangeLabel("");
-
-        DisplayMetrics metrics = new DisplayMetrics();
-        getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        int width = metrics.widthPixels;
-        int height = metrics.heightPixels;
 
         Screensize screensize = new Screensize(getActivity().getWindowManager());
 
