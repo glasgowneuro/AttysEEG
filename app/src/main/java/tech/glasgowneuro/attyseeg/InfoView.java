@@ -44,7 +44,7 @@ public class InfoView extends SurfaceView implements SurfaceHolder.Callback {
         init();
     }
 
-    public void surfaceDestroyed(SurfaceHolder holder) {
+    public void surfaceDestroyed(SurfaceHolder _holder) {
         holder = null;
     }
 

@@ -14,7 +14,6 @@ import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AlertDialog;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
@@ -286,7 +285,6 @@ public class EPFragment extends Fragment {
     // sets the sampling rate
     public void setSamplingrate(int _samplingrate) {
         samplingRate = _samplingrate;
-        final long CONST1E9 = 1000000000;
     }
 
     // sets the background layer of the visual stimulus

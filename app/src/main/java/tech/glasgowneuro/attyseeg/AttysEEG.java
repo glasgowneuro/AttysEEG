@@ -25,6 +25,7 @@ import android.util.SparseBooleanArray;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -253,7 +254,6 @@ public class AttysEEG extends AppCompatActivity {
     }
 
 
-
     AttysComm.DataListener dataListener = new AttysComm.DataListener() {
         @Override
         public void gotData(long l, float[] f) {
@@ -411,7 +411,7 @@ public class AttysEEG extends AppCompatActivity {
                                 betaRatioFragment.addValue((float) filteredEEG);
                             }
                             if (barGraphFragment != null) {
-                                barGraphFragment.addValue(delta,theta,alpha,beta,gamma);
+                                barGraphFragment.addValue(delta, theta, alpha, beta, gamma);
                             }
 
                             // now plotting it in the main window
@@ -594,23 +594,23 @@ public class AttysEEG extends AppCompatActivity {
         notch_mains_fundamental = new Butterworth();
         notch_mains_fundamental.bandStop(notchOrder,
                 attysComm.getSamplingRateInHz(), powerlineHz, notchBW);
-        if ((powerlineHz*2) < (samplingRate/2)) {
+        if ((powerlineHz * 2) < (samplingRate / 2)) {
             notch_mains_1st_harmonic = new Butterworth();
             notch_mains_1st_harmonic.bandStop(notchOrder,
                     attysComm.getSamplingRateInHz(), powerlineHz * 2, notchBW);
         } else {
             notch_mains_1st_harmonic = null;
         }
-        if ((powerlineHz*3) < (samplingRate/2)) {
+        if ((powerlineHz * 3) < (samplingRate / 2)) {
             notch_mains_2nd_harmonic = new Butterworth();
             notch_mains_2nd_harmonic.bandStop(notchOrder,
                     attysComm.getSamplingRateInHz(), powerlineHz * 3, notchBW);
-        }  else {
+        } else {
             notch_mains_2nd_harmonic = null;
         }
 
         // general lowpass filter
-        if (allChLowpassF < (samplingRate/2)) {
+        if (allChLowpassF < (samplingRate / 2)) {
             lowpass = new Butterworth();
             lowpass.lowPass(2, attysComm.getSamplingRateInHz(), allChLowpassF);
         } else {
@@ -820,6 +820,8 @@ public class AttysEEG extends AppCompatActivity {
 
         final List files = new ArrayList();
         final String[] list = ATTYSDIR.list();
+        if (list == null) return;
+        if (files == null) return;
         for (String file : list) {
             if (files != null) {
                 if (file != null) {
@@ -872,6 +874,14 @@ public class AttysEEG extends AppCompatActivity {
                     }
                 })
                 .show();
+
+        if (listview != null) {
+            ViewGroup.LayoutParams layoutParams = listview.getLayoutParams();
+            Screensize screensize = new Screensize(getWindowManager());
+            layoutParams.height = screensize.getHeightInPixels() / 2;
+            listview.setLayoutParams(layoutParams);
+        }
+
     }
 
 

@@ -12,11 +12,6 @@ public class Screensize {
 
     final String TAG="Screensize";
 
-    DisplayMetrics metrics = new DisplayMetrics();
-    final double width;
-    final double height;
-    final float diagonal;
-
     Screensize(WindowManager windowManager) {
         windowManager.getDefaultDisplay().getMetrics(metrics);
         width = metrics.widthPixels / metrics.xdpi;
@@ -27,6 +22,12 @@ public class Screensize {
         }
     }
 
+    DisplayMetrics metrics = new DisplayMetrics();
+
+    private final double width;
+    private final double height;
+    private final float diagonal;
+
     public boolean isMobile() {
         return (diagonal < 5);
     }
@@ -35,7 +36,13 @@ public class Screensize {
         return !(diagonal < 5);
     }
 
-    public float sizeInInch() {
+    public float getSizeInInch() {
         return diagonal;
     }
+
+    public double getWidthInInch() { return width;}
+    public double getHeightInInch() { return height;}
+
+    public int getWidthInPixels() { return metrics.widthPixels;}
+    public int getHeightInPixels() { return metrics.heightPixels;}
 }
