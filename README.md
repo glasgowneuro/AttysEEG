@@ -1,6 +1,6 @@
 # AttysEEG
 
-EEG app for Attys
+EEG app for [Attys](http://www.attys.tech)
 
 ## Features
 
@@ -18,7 +18,3 @@ EEG app for Attys
 
 ## Link to play store
 [https://play.google.com/store/apps/details?id=tech.glasgowneuro.attyseeg]
-
-
-## Link to the hardware: ATTYS
-[http://www.attys.tech]
