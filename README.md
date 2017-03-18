@@ -13,6 +13,8 @@ EEG app for Attys
 * Saves the raw data and the filtered frequency bands
 * Works on a wide range of screens form tablets to mobile phones
 
+[screenshots/beta_ratio_during_alpha_waves.png]
+
 Link to play store:
 
 [https://play.google.com/store/apps/details?id=tech.glasgowneuro.attyseeg]
