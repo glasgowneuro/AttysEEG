@@ -157,13 +157,13 @@ public class AttysEEG extends AppCompatActivity {
         private PrintWriter textdataFileStream = null;
         private File textdataFile = null;
         private byte data_separator = dataRecorder.DATA_SEPARATOR_TAB;
-        float samplingInterval = 0;
+        long sample = 0;
         File file = null;
 
         // starts the recording
         public java.io.FileNotFoundException startRec(File _file) {
             file = _file;
-            samplingInterval = 1.0F / attysComm.getSamplingRateInHz();
+            sample = 0;
             try {
                 textdataFileStream = new PrintWriter(file);
                 textdataFile = file;
@@ -180,7 +180,9 @@ public class AttysEEG extends AppCompatActivity {
         public void stopRec() {
             if (textdataFileStream != null) {
                 textdataFileStream.close();
-                messageListener.haveMessage(AttysComm.MESSAGE_STOPPED_RECORDING);
+                if (messageListener != null) {
+                    messageListener.haveMessage(AttysComm.MESSAGE_STOPPED_RECORDING);
+                }
                 textdataFileStream = null;
                 textdataFile = null;
                 if (file != null) {
@@ -211,11 +213,12 @@ public class AttysEEG extends AppCompatActivity {
 
         private void saveData(float rawEEG,
                               float filteredEEG,
-                              float delta,
-                              float theta,
-                              float alpha,
                               float beta,
+                              float alpha,
+                              float theta,
+                              float delta,
                               float gamma) {
+
 
             if (textdataFileStream == null) return;
 
@@ -231,7 +234,8 @@ public class AttysEEG extends AppCompatActivity {
                     s = 9;
                     break;
             }
-            float t = timestamp + samplingInterval;
+            double t = (double)sample / attysComm.getSamplingRateInHz();
+
             String tmp = String.format("%e%c", t, s);
             tmp = tmp + String.format("%e%c", rawEEG, s);
             tmp = tmp + String.format("%e%c", filteredEEG, s);
@@ -240,6 +244,7 @@ public class AttysEEG extends AppCompatActivity {
             tmp = tmp + String.format("%e%c", alpha, s);
             tmp = tmp + String.format("%e%c", beta, s);
             tmp = tmp + String.format("%e%c", gamma, s);
+            sample++;
             if (textdataFileStream != null) {
                 textdataFileStream.format("%s\n", tmp);
                 if (textdataFileStream != null) {
