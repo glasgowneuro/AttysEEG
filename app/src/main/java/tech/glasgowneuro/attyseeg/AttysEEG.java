@@ -1,7 +1,7 @@
 package tech.glasgowneuro.attyseeg;
 
 import android.Manifest;
-import android.app.ProgressDialog;
+import android.widget.ProgressBar;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.DialogInterface;
@@ -142,7 +142,7 @@ public class AttysEEG extends AppCompatActivity {
     static final File ATTYSDIR =
             new File(Environment.getExternalStorageDirectory().getPath(), ATTYS_SUBDIR);
 
-    ProgressDialog progress = null;
+    ProgressBar progress = null;
 
     AlertDialog alertDialog = null;
 
@@ -281,16 +281,11 @@ public class AttysEEG extends AppCompatActivity {
                     if (attysComm != null) {
                         attysComm.stop();
                     }
-                    progress.dismiss();
+                    progress.setVisibility(View.GONE);
                     finish();
                     break;
                 case AttysComm.MESSAGE_CONNECTED:
-                    progress.dismiss();
-                    break;
-                case AttysComm.MESSAGE_CONFIGURE:
-                    Toast.makeText(getApplicationContext(),
-                            "Configuring Attys", Toast.LENGTH_SHORT).show();
-                    progress.dismiss();
+                    progress.setVisibility(View.GONE);
                     break;
                 case AttysComm.MESSAGE_RETRY:
                     Toast.makeText(getApplicationContext(),
@@ -308,8 +303,7 @@ public class AttysEEG extends AppCompatActivity {
                             Toast.LENGTH_SHORT).show();
                     break;
                 case AttysComm.MESSAGE_CONNECTING:
-                    progress.setMessage("Connecting");
-                    progress.show();
+                    progress.setVisibility(View.VISIBLE);
             }
         }
     };
@@ -516,8 +510,6 @@ public class AttysEEG extends AppCompatActivity {
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        progress = new ProgressDialog(this);
-
         if (!ATTYSDIR.exists()) {
             ATTYSDIR.mkdirs();
         }
@@ -526,8 +518,10 @@ public class AttysEEG extends AppCompatActivity {
 
         setContentView(R.layout.main_activity_layout);
 
-        Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
+        Toolbar myToolbar = findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
+
+        progress = findViewById(R.id.indeterminateBar);
 
         highpass = new Butterworth();
         betaHighpass = new Butterworth();
@@ -569,7 +563,7 @@ public class AttysEEG extends AppCompatActivity {
         if (btAttysDevice == null) {
             alertDialog = new AlertDialog.Builder(this)
                     .setTitle("No Attys found")
-                    .setMessage("Visit www.attys.tech for help and you can buy it directly from there!")
+                    .setMessage("Visit www.attys.tech for help?")
                     .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int whichButton) {
                             String url = "http://www.attys.tech";
@@ -642,16 +636,16 @@ public class AttysEEG extends AppCompatActivity {
         // for delta waves
         deltaLowpass.lowPass(2, attysComm.getSamplingRateInHz(), deltaFhigh);
 
-        realtimePlotView = (RealtimePlotView) findViewById(R.id.realtimeplotview);
+        realtimePlotView = findViewById(R.id.realtimeplotview);
         realtimePlotView.setMaxChannels(15);
         realtimePlotView.init();
 
-        infoView = (InfoView) findViewById(R.id.infoview);
+        infoView = findViewById(R.id.infoview);
         infoView.setZOrderOnTop(true);
         infoView.setZOrderMediaOverlay(true);
 
-        stimulusView1 = (StimulusView) findViewById(R.id.stimulusview1);
-        stimulusView2 = (StimulusView) findViewById(R.id.stimulusview2);
+        stimulusView1 = findViewById(R.id.stimulusview1);
+        stimulusView2 = findViewById(R.id.stimulusview2);
 
         attysComm.start();
 
@@ -1072,12 +1066,12 @@ public class AttysEEG extends AppCompatActivity {
             mainplotWeight = 1.5f;
         }
 
-        FrameLayout frameLayout = (FrameLayout) findViewById(R.id.mainplotlayout);
+        FrameLayout frameLayout = findViewById(R.id.mainplotlayout);
         frameLayout.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.MATCH_PARENT, mainplotWeight));
 
-        frameLayout = (FrameLayout) findViewById(R.id.fragment_plot_container);
+        frameLayout = findViewById(R.id.fragment_plot_container);
         frameLayout.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.MATCH_PARENT, 1.0f));
@@ -1085,7 +1079,7 @@ public class AttysEEG extends AppCompatActivity {
     }
 
     private void hidePlotFragment() {
-        FrameLayout frameLayout = (FrameLayout) findViewById(R.id.mainplotlayout);
+        FrameLayout frameLayout = findViewById(R.id.mainplotlayout);
         frameLayout.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.MATCH_PARENT, 0.0f));
