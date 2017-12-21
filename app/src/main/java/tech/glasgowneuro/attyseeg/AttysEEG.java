@@ -35,8 +35,6 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import com.google.android.gms.appindexing.Action;
-import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.common.api.GoogleApiClient;
 
 import java.io.File;
@@ -131,13 +129,6 @@ public class AttysEEG extends AppCompatActivity {
 
     private String dataFilename = null;
     private byte dataSeparator = 0;
-
-    /**
-     * App Indexing API.
-     * See https://g.co/AppIndexing/AndroidStudio for more information.
-     */
-    private GoogleApiClient client;
-    private Action viewAction;
 
     static final File ATTYSDIR =
             new File(Environment.getExternalStorageDirectory().getPath(), ATTYS_SUBDIR);
@@ -533,10 +524,6 @@ public class AttysEEG extends AppCompatActivity {
         deltaLowpass = new Butterworth();
         gammaHighpass = new Butterworth();
         gain = DEFAULT_GAIN;
-
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
     }
 
     // this is called whenever the app is starting or re-starting
@@ -550,14 +537,6 @@ public class AttysEEG extends AppCompatActivity {
 
 
     public void startDAQ() {
-
-        client.connect();
-        viewAction = Action.newAction(
-                Action.TYPE_VIEW,
-                "Attys Homepage",
-                Uri.parse("http://www.attys.tech")
-        );
-        AppIndex.AppIndexApi.start(client, viewAction);
 
         btAttysDevice = AttysComm.findAttysBtDevice();
         if (btAttysDevice == null) {
@@ -739,8 +718,6 @@ public class AttysEEG extends AppCompatActivity {
             epFragment.stopSweeps();
         }
 
-        AppIndex.AppIndexApi.end(client, viewAction);
-        client.disconnect();
     }
 
 
