@@ -1038,20 +1038,16 @@ public class AttysEEG extends AppCompatActivity {
     private void showPlotFragment() {
 
         Screensize screensize = new Screensize(getWindowManager());
-        float mainplotWeight = 0.65f;
-        if (screensize.isMobile()) {
-            mainplotWeight = 1.5f;
-        }
 
         FrameLayout frameLayout = findViewById(R.id.mainplotlayout);
         frameLayout.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.MATCH_PARENT, mainplotWeight));
+                LinearLayout.LayoutParams.MATCH_PARENT, 1.0F));
 
         frameLayout = findViewById(R.id.fragment_plot_container);
         frameLayout.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.MATCH_PARENT, 1.0f));
+                LinearLayout.LayoutParams.MATCH_PARENT, 0.5F));
 
     }
 
