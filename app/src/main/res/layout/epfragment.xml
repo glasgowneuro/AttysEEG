@@ -1,63 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<android.support.percent.PercentFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:ap="http://schemas.android.com/apk/res-auto"
     android:layout_width="fill_parent"
-    android:layout_height="fill_parent">
+    android:layout_height="fill_parent"
+    android:layout_gravity="center"
+    android:orientation="vertical">
 
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:ap="http://schemas.android.com/apk/res-auto"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:layout_gravity="center"
-        android:orientation="vertical"
-        app:layout_heightPercent="95%"
-        app:layout_widthPercent="95%">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <Spinner
-                android:id="@+id/ep_mode"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:clickable="true"
-                android:spinnerMode="dropdown"
-                android:layout_gravity="start"
-                />
-
-            <ToggleButton
-                android:layout_weight="1"
-                android:id="@+id/doSweeps"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content" />
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_weight="0.5"
-                android:layout_height="wrap_content"
-                android:text=" "/>
-
-            <Button
-                android:layout_weight="1"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:text="RESET"
-                android:id="@+id/aepReset"
-                />
-
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/nsweepsTextView"
+        <Spinner
+            android:id="@+id/ep_mode"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:gravity="end"
-            android:text=""
-            android:textColor="#00FFFF"
-            android:textSize="12sp" />
+            android:layout_gravity="start"
+            android:clickable="true"
+            android:spinnerMode="dropdown" />
+
+        <ToggleButton
+            android:id="@+id/doSweeps"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.5"
+            android:text=" " />
+
+        <Button
+            android:id="@+id/aepReset"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="RESET" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/nsweepsTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:gravity="end"
+        android:text=""
+        android:textColor="#00FFFF"
+        android:textSize="12sp" />
+
+    <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_margin="10dp">
 
         <com.androidplot.xy.XYPlot
             android:id="@+id/bpmPlotView"
@@ -70,6 +66,6 @@
             ap:rangeTitle="range"
             ap:title=" " />
 
-    </LinearLayout>
+    </android.support.constraint.ConstraintLayout>
 
-</android.support.percent.PercentFrameLayout>
+</LinearLayout>
