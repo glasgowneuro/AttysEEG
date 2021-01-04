@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/AttysEEG.iml" filepath="$PROJECT_DIR$/AttysEEG.iml" group="AttysEEG" />
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" group="AttysEEG/app" />
+      <module fileurl="file://$PROJECT_DIR$/AttysEEG.iml" filepath="$PROJECT_DIR$/AttysEEG.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/AttysEEG.app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/AttysEEG.app.iml" />
     </modules>
   </component>
 </project>
