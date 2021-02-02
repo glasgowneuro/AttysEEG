@@ -93,7 +93,6 @@ public class AttysEEG extends AppCompatActivity {
 
     private BluetoothAdapter BA;
     private AttysComm attysComm = null;
-    private BluetoothDevice btAttysDevice = null;
     private byte samplingRate = AttysComm.ADC_RATE_500Hz;
 
     private Timer timer = null;
@@ -556,12 +555,12 @@ public class AttysEEG extends AppCompatActivity {
 
     public void startDAQ() {
 
-        btAttysDevice = AttysComm.findAttysBtDevice();
+        BluetoothDevice btAttysDevice = AttysComm.findAttysBtDevice();
         if (btAttysDevice == null) {
             noAttysFoundAlert();
         }
 
-        attysComm = new AttysComm(btAttysDevice);
+        attysComm = new AttysComm();
         attysComm.registerMessageListener(messageListener);
         attysComm.registerDataListener(dataListener);
         attysComm.setFullOrPartialData(AttysComm.PARTIAL_DATA);
