@@ -50,8 +50,6 @@ import java.util.TimerTask;
 
 import uk.me.berndporr.iirj.Butterworth;
 
-import static tech.glasgowneuro.attyseeg.AttysEEG.ATTYSDIR;
-
 /**
  * Evoked potentials Fragment
  */
@@ -575,7 +573,7 @@ public class EPFragment extends Fragment {
         File file;
 
         try {
-            file = new File(ATTYSDIR, dataFilename.trim());
+            file = new File(requireActivity().getBaseContext().getExternalFilesDir(null), dataFilename.trim());
             file.createNewFile();
             if (Log.isLoggable(TAG, Log.DEBUG)) {
                 Log.d(TAG, "Saving AEP to " + file.getAbsolutePath());
@@ -617,7 +615,7 @@ public class EPFragment extends Fragment {
 
 
     private void loadAudio(final String filename) {
-        File fp = new File(ATTYSDIR, filename);
+        File fp = new File(requireActivity().getBaseContext().getExternalFilesDir(null), filename);
         try {
             Scanner scanner = new Scanner(fp);
             int n = 0;
@@ -673,7 +671,7 @@ public class EPFragment extends Fragment {
         }
 
         final List files = new ArrayList();
-        final String[] list = ATTYSDIR.list();
+        final String[] list = requireActivity().getBaseContext().getExternalFilesDir(null).list();
         for (String file : list) {
             if (files != null) {
                 if (file != null) {

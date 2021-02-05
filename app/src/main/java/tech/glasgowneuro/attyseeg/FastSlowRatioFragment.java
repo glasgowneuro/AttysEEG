@@ -33,6 +33,7 @@ import com.androidplot.xy.XYPlot;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -275,7 +276,7 @@ public class FastSlowRatioFragment extends Fragment {
         File file;
 
         try {
-            file = new File(AttysEEG.ATTYSDIR, dataFilename.trim());
+            file = new File(requireActivity().getBaseContext().getExternalFilesDir(null), dataFilename.trim());
             file.createNewFile();
             if (Log.isLoggable(TAG, Log.DEBUG)) {
                 Log.d(TAG, "Saving fast/slow data to " + file.getAbsolutePath());

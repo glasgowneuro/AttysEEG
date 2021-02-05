@@ -127,9 +127,6 @@ public class AttysEEG extends AppCompatActivity {
     private String dataFilename = null;
     private byte dataSeparator = 0;
 
-    static final File ATTYSDIR =
-            new File(Environment.getExternalStorageDirectory().getPath(), ATTYS_SUBDIR);
-
     ProgressBar progress = null;
 
     AlertDialog alertDialog = null;
@@ -498,10 +495,6 @@ public class AttysEEG extends AppCompatActivity {
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        if (!ATTYSDIR.exists()) {
-            ATTYSDIR.mkdirs();
-        }
-
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
 
         setContentView(R.layout.main_activity_layout);
@@ -727,21 +720,6 @@ public class AttysEEG extends AppCompatActivity {
         final EditText filenameEditText = new EditText(this);
         filenameEditText.setSingleLine(true);
 
-        final int REQUEST_EXTERNAL_STORAGE = 1;
-        String[] PERMISSIONS_STORAGE = {
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-        };
-
-        int permission = ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
-
-        if (permission != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(
-                    this,
-                    PERMISSIONS_STORAGE,
-                    REQUEST_EXTERNAL_STORAGE
-            );
-        }
-
         filenameEditText.setHint("");
         filenameEditText.setText(dataFilename);
 
@@ -780,23 +758,8 @@ public class AttysEEG extends AppCompatActivity {
 
     private void shareData() {
 
-        final int REQUEST_EXTERNAL_STORAGE = 1;
-        String[] PERMISSIONS_STORAGE = {
-                Manifest.permission.READ_EXTERNAL_STORAGE
-        };
-
-        int permission = ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
-
-        if (permission != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(
-                    this,
-                    PERMISSIONS_STORAGE,
-                    REQUEST_EXTERNAL_STORAGE
-            );
-        }
-
         final List files = new ArrayList();
-        final String[] list = ATTYSDIR.list();
+        final String[] list = getBaseContext().getExternalFilesDir(null).list();
         if (list == null) return;
         if (files == null) return;
         for (String file : list) {
@@ -834,7 +797,7 @@ public class AttysEEG extends AppCompatActivity {
                         for (int i = 0; i < listview.getCount(); i++) {
                             if (checked.get(i)) {
                                 String filename = list[i];
-                                File fp = new File(ATTYSDIR, filename);
+                                File fp = new File(getBaseContext().getExternalFilesDir(null), filename);
                                 files.add(Uri.fromFile(fp));
                                 if (Log.isLoggable(TAG, Log.DEBUG)) {
                                     Log.d(TAG, "share data, filename=" + filename);
@@ -886,7 +849,7 @@ public class AttysEEG extends AppCompatActivity {
                     dataRecorder.stopRec();
                 } else {
                     if (dataFilename != null) {
-                        File file = new File(ATTYSDIR, dataFilename.trim());
+                        File file = new File(getBaseContext().getExternalFilesDir(null), dataFilename.trim());
                         dataRecorder.setDataSeparator(dataSeparator);
                         if (file.exists()) {
                             Toast.makeText(getApplicationContext(),

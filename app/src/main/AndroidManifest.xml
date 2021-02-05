@@ -3,7 +3,7 @@
     package="tech.glasgowneuro.attyseeg">
 
     <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
 
     <supports-screens
     android:smallScreens="true"
@@ -12,9 +12,8 @@
     android:xlargeScreens="true" />
 
     <application
-        android:requestLegacyExternalStorage="true"
         android:hardwareAccelerated="true"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher_attyseeg"
         android:label="@string/app_name"
         android:supportsRtl="true"
@@ -26,8 +25,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".PrefsActivity"
-            android:theme="@android:style/Theme.Black.NoTitleBar" />
+            android:name=".PrefsActivity" />
         <!--
      ATTENTION: This was auto-generated to add Google Play services to your project for
      App Indexing.  See https://g.co/AppIndexing/AndroidStudio for more information.
