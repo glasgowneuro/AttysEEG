@@ -1,6 +1,9 @@
 package tech.glasgowneuro.attyseeg;
 
 import android.Manifest;
+import android.graphics.Color;
+import android.text.SpannableString;
+import android.text.style.ForegroundColorSpan;
 import android.widget.ProgressBar;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -98,6 +101,12 @@ public class AttysEEG extends AppCompatActivity {
     private Timer timer = null;
 
     UpdatePlotTask updatePlotTask = null;
+
+    MenuItem menuItemPref = null;
+    MenuItem menuItemEnterFilename = null;
+    MenuItem menuItemRec = null;
+    MenuItem menuItemBrowser = null;
+    MenuItem menuItemSource = null;
 
     private static final String TAG = "AttysEEG";
 
@@ -525,7 +534,6 @@ public class AttysEEG extends AppCompatActivity {
 
     }
 
-
     private void noAttysFoundAlert() {
         alertDialog = new AlertDialog.Builder(this)
                 .setTitle("No Attys found or bluetooth disabled")
@@ -536,6 +544,16 @@ public class AttysEEG extends AppCompatActivity {
                         startActivity(i);
                     }
                 })
+                .setNeutralButton("Buy an Attys at: www.attys.tech", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String url = "https://www.attys.tech";
+                        Intent i = new Intent(Intent.ACTION_VIEW);
+                        i.setData(Uri.parse(url));
+                        startActivity(i);
+                        finish();
+                    }
+                })
                 .setNegativeButton("Exit", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
                         finish();
@@ -543,7 +561,6 @@ public class AttysEEG extends AppCompatActivity {
                 })
                 .show();
     }
-
 
 
     public void startDAQ() {
@@ -743,6 +760,7 @@ public class AttysEEG extends AppCompatActivity {
                                     dataFilename = dataFilename + ".tsv";
                             }
                         }
+                        setRecColour(Color.GREEN);
                         Toast.makeText(getApplicationContext(),
                                 "Press rec to record to '" + dataFilename + "'",
                                 Toast.LENGTH_SHORT).show();
@@ -750,6 +768,8 @@ public class AttysEEG extends AppCompatActivity {
                 })
                 .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
+                        dataFilename = null;
+                        setRecColour(Color.GRAY);
                     }
                 })
                 .show();
@@ -825,14 +845,35 @@ public class AttysEEG extends AppCompatActivity {
     }
 
 
+    private void setRecColour(int c) {
+        if (null == menuItemRec) return;
+        SpannableString s = new SpannableString(menuItemRec.getTitle());
+        s.setSpan(new ForegroundColorSpan(c), 0, s.length(), 0);
+        menuItemRec.setTitle(s);
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main_menu_attyseeg, menu);
 
+        menuItemEnterFilename = menu.findItem(R.id.enterFilename);
+        menuItemPref = menu.findItem(R.id.preferences);
+        menuItemRec = menu.findItem(R.id.toggleRec);
+        menuItemBrowser = menu.findItem(R.id.filebrowser);
+        menuItemSource = menu.findItem(R.id.sourcecode);
+
+        setRecColour(Color.GRAY);
+
         return true;
     }
 
+    private void enableMenuitems(boolean doit) {
+        menuItemPref.setEnabled(doit);
+        menuItemEnterFilename.setEnabled(doit);
+        menuItemSource.setEnabled(doit);
+        menuItemBrowser.setEnabled(doit);
+    }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -847,6 +888,8 @@ public class AttysEEG extends AppCompatActivity {
             case R.id.toggleRec:
                 if (dataRecorder.isRecording()) {
                     dataRecorder.stopRec();
+                    setRecColour(Color.GRAY);
+                    enableMenuitems(true);
                 } else {
                     if (dataFilename != null) {
                         File file = new File(getBaseContext().getExternalFilesDir(null), dataFilename.trim());
@@ -855,6 +898,7 @@ public class AttysEEG extends AppCompatActivity {
                             Toast.makeText(getApplicationContext(),
                                     "File exists already. Enter a different one.",
                                     Toast.LENGTH_LONG).show();
+                            enableMenuitems(true);
                             return true;
                         }
                         java.io.FileNotFoundException e = dataRecorder.startRec(file);
@@ -865,11 +909,14 @@ public class AttysEEG extends AppCompatActivity {
                             return true;
                         }
                         if (dataRecorder.isRecording()) {
+                            setRecColour(Color.RED);
+                            enableMenuitems(false);
                             if (Log.isLoggable(TAG, Log.DEBUG)) {
                                 Log.d(TAG, "Saving to " + file.getAbsolutePath());
                             }
                         }
                     } else {
+                        enableMenuitems(true);
                         Toast.makeText(getApplicationContext(),
                                 "To record enter a filename first", Toast.LENGTH_SHORT).show();
                     }
