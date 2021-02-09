@@ -10,11 +10,15 @@ android {
         applicationId "tech.glasgowneuro.attyseeg"
         minSdkVersion 24
         targetSdkVersion 30
-        versionCode 27
-        versionName "1.1.1"
+        versionCode 29
+        versionName "1.1.3"
     }
     buildTypes {
+        debug {
+            manifestPlaceholders = [crashlyticsCollection: "false"]
+        }
         release {
+            manifestPlaceholders = [crashlyticsCollection: "true"]
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
@@ -48,4 +52,5 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation platform('com.google.firebase:firebase-bom:26.4.0')
     implementation 'com.google.firebase:firebase-analytics'
+    implementation 'com.google.firebase:firebase-crashlytics'
 }
