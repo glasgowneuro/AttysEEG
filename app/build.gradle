@@ -1,12 +1,15 @@
 apply plugin: 'com.android.application'
+apply plugin: 'com.google.gms.google-services'
+apply plugin: 'com.google.firebase.crashlytics'
+
 
 android {
-    compileSdkVersion 29
+    compileSdkVersion 30
 
     defaultConfig {
         applicationId "tech.glasgowneuro.attyseeg"
         minSdkVersion 24
-        targetSdkVersion 29
+        targetSdkVersion 30
         versionCode 27
         versionName "1.1.1"
     }
@@ -43,4 +46,6 @@ dependencies {
     implementation "com.androidplot:androidplot-core:1.5.6"
     implementation 'com.google.android.gms:play-services-base:17.6.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
+    implementation platform('com.google.firebase:firebase-bom:26.4.0')
+    implementation 'com.google.firebase:firebase-analytics'
 }
