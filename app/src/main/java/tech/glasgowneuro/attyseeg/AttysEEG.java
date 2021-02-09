@@ -43,6 +43,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -134,7 +135,7 @@ public class AttysEEG extends AppCompatActivity {
     private int timestamp = 0;
 
     private String dataFilename = null;
-    private byte dataSeparator = 0;
+    private final byte dataSeparator = 0;
 
     ProgressBar progress = null;
 
@@ -150,7 +151,7 @@ public class AttysEEG extends AppCompatActivity {
 
         private PrintWriter textdataFileStream = null;
         private File textdataFile = null;
-        private byte data_separator = dataRecorder.DATA_SEPARATOR_TAB;
+        private byte data_separator = DATA_SEPARATOR_TAB;
         long sample = 0;
         File file = null;
 
@@ -230,14 +231,14 @@ public class AttysEEG extends AppCompatActivity {
             }
             double t = (double)sample / attysComm.getSamplingRateInHz();
 
-            String tmp = String.format("%e%c", t, s);
-            tmp = tmp + String.format("%e%c", rawEEG, s);
-            tmp = tmp + String.format("%e%c", filteredEEG, s);
-            tmp = tmp + String.format("%e%c", delta, s);
-            tmp = tmp + String.format("%e%c", theta, s);
-            tmp = tmp + String.format("%e%c", alpha, s);
-            tmp = tmp + String.format("%e%c", beta, s);
-            tmp = tmp + String.format("%e%c", gamma, s);
+            String tmp = String.format(Locale.US,"%e%c", t, s);
+            tmp = tmp + String.format(Locale.US,"%e%c", rawEEG, s);
+            tmp = tmp + String.format(Locale.US,"%e%c", filteredEEG, s);
+            tmp = tmp + String.format(Locale.US,"%e%c", delta, s);
+            tmp = tmp + String.format(Locale.US,"%e%c", theta, s);
+            tmp = tmp + String.format(Locale.US,"%e%c", alpha, s);
+            tmp = tmp + String.format(Locale.US,"%e%c", beta, s);
+            tmp = tmp + String.format(Locale.US,"%e%c", gamma, s);
             sample++;
             if (textdataFileStream != null) {
                 textdataFileStream.format("%s\n", tmp);
@@ -265,48 +266,46 @@ public class AttysEEG extends AppCompatActivity {
 
     DataRecorder dataRecorder = new DataRecorder();
 
-    Handler handler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case AttysComm.MESSAGE_ERROR:
-                    Toast.makeText(getApplicationContext(),
-                            "Bluetooth connection problem", Toast.LENGTH_SHORT).show();
-                    if (attysComm != null) {
-                        attysComm.stop();
-                    }
-                    progress.setVisibility(View.GONE);
-                    finish();
-                    break;
-                case AttysComm.MESSAGE_CONNECTED:
-                    progress.setVisibility(View.GONE);
-                    break;
-                case AttysComm.MESSAGE_RETRY:
-                    Toast.makeText(getApplicationContext(),
-                            "Bluetooth - trying to connect. Please be patient.",
-                            Toast.LENGTH_SHORT).show();
-                    break;
-                case AttysComm.MESSAGE_STARTED_RECORDING:
-                    Toast.makeText(getApplicationContext(),
-                            "Started recording data to external storage.",
-                            Toast.LENGTH_SHORT).show();
-                    break;
-                case AttysComm.MESSAGE_STOPPED_RECORDING:
-                    Toast.makeText(getApplicationContext(),
-                            "Finished recording data to external storage.",
-                            Toast.LENGTH_SHORT).show();
-                    break;
-                case AttysComm.MESSAGE_CONNECTING:
-                    progress.setVisibility(View.VISIBLE);
-            }
-        }
-    };
-
-
     AttysComm.MessageListener messageListener = new AttysComm.MessageListener() {
         @Override
-        public void haveMessage(int msg) {
-            handler.sendEmptyMessage(msg);
+        public void haveMessage(final int msg) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    switch (msg) {
+                        case AttysComm.MESSAGE_ERROR:
+                            Toast.makeText(getApplicationContext(),
+                                    "Bluetooth connection problem", Toast.LENGTH_SHORT).show();
+                            if (attysComm != null) {
+                                attysComm.stop();
+                            }
+                            progress.setVisibility(View.GONE);
+                            finish();
+                            break;
+                        case AttysComm.MESSAGE_CONNECTED:
+                            progress.setVisibility(View.GONE);
+                            break;
+                        case AttysComm.MESSAGE_RETRY:
+                            progress.setVisibility(View.VISIBLE);
+                            Toast.makeText(getApplicationContext(),
+                                    "Bluetooth - trying to connect. Please be patient.",
+                                    Toast.LENGTH_SHORT).show();
+                            break;
+                        case AttysComm.MESSAGE_STARTED_RECORDING:
+                            Toast.makeText(getApplicationContext(),
+                                    "Started recording data to external storage.",
+                                    Toast.LENGTH_SHORT).show();
+                            break;
+                        case AttysComm.MESSAGE_STOPPED_RECORDING:
+                            Toast.makeText(getApplicationContext(),
+                                    "Finished recording data to external storage.",
+                                    Toast.LENGTH_SHORT).show();
+                            break;
+                        case AttysComm.MESSAGE_CONNECTING:
+                            progress.setVisibility(View.VISIBLE);
+                    }
+                }
+            });
         }
     };
 
@@ -315,7 +314,7 @@ public class AttysEEG extends AppCompatActivity {
 
         private void annotatePlot() {
             String small = "";
-            small = small + "".format("1 sec/div, %1.02f mV/div", ytick * 1000);
+            small = small + String.format(Locale.US,"1 sec/div, %1.02f mV/div", ytick * 1000);
             if (dataRecorder.isRecording()) {
                 small = small + " !!RECORDING to:" + dataFilename;
             }
@@ -330,8 +329,6 @@ public class AttysEEG extends AppCompatActivity {
 
             if (attysComm != null) {
                 if (attysComm.hasFatalError()) {
-                    // Log.d(TAG,String.format("No bluetooth connection"));
-                    handler.sendEmptyMessage(AttysComm.MESSAGE_ERROR);
                     return;
                 }
             }
@@ -340,7 +337,7 @@ public class AttysEEG extends AppCompatActivity {
             }
 
             int nCh = 0;
-            if (attysComm != null) nCh = attysComm.NCHANNELS;
+            if (attysComm != null) nCh = AttysComm.NCHANNELS;
             if (attysComm != null) {
                 float[] tmpSample = new float[nCh];
                 float[] tmpMin = new float[nCh];
@@ -583,14 +580,14 @@ public class AttysEEG extends AppCompatActivity {
         notch_mains_fundamental = new Butterworth();
         notch_mains_fundamental.bandStop(notchOrder,
                 attysComm.getSamplingRateInHz(), powerlineHz, notchBW);
-        if ((powerlineHz * 2) < (samplingRate / 2)) {
+        if ((powerlineHz * 2) < ((float)samplingRate / 2)) {
             notch_mains_1st_harmonic = new Butterworth();
             notch_mains_1st_harmonic.bandStop(notchOrder,
                     attysComm.getSamplingRateInHz(), powerlineHz * 2, notchBW);
         } else {
             notch_mains_1st_harmonic = null;
         }
-        if ((powerlineHz * 3) < (samplingRate / 2)) {
+        if ((powerlineHz * 3) < ((float)samplingRate / 2)) {
             notch_mains_2nd_harmonic = new Butterworth();
             notch_mains_2nd_harmonic.bandStop(notchOrder,
                     attysComm.getSamplingRateInHz(), powerlineHz * 3, notchBW);
@@ -599,7 +596,7 @@ public class AttysEEG extends AppCompatActivity {
         }
 
         // general lowpass filter
-        if (allChLowpassF < (samplingRate / 2)) {
+        if (allChLowpassF < ((float)samplingRate / 2)) {
             lowpass = new Butterworth();
             lowpass.lowPass(2, attysComm.getSamplingRateInHz(), allChLowpassF);
         } else {
