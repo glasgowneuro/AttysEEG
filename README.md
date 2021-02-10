@@ -4,7 +4,7 @@ EEG app for [Attys](http://www.attys.tech)
 
 ## Features
 
-* Plot of Raw EEG data at 250Hz or 500Hz (experimental) sampling rate
+* Plot of Raw EEG data at 250Hz or 500Hz sampling rate
 * Plot of alpha, gamma, delta, beta and theta waves
 * Visually evoked potentials
 * Acoustically evoked potentials (with custom stimulus)
