@@ -21,7 +21,7 @@
     <string-array name="textDataFileSeparatorOptions">
         <item>Space separated values</item>
         <item>Comma separated values</item>
-        <item>Tab separated values (compatible with OCTAVE,MATLAB and GNUPLOT)</item>
+        <item>Tab separated values</item>
     </string-array>
     <string-array name="textDataFileSeparatorValues">
         <item>0</item>
@@ -40,7 +40,7 @@
 
     <string-array name="samplingRateOptions">
         <item>250Hz</item>
-        <item>500Hz (experimental!)</item>
+        <item>500Hz</item>
     </string-array>
     <string-array name="samplingRateValues">
         <item>1</item>
