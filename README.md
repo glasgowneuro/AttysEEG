@@ -23,7 +23,7 @@ EEG app for [Attys](http://www.attys.tech)
 
 Only the 1st channel is used: +, - and GND of the Attys.
 
-[alt tag](wiring.jpg)
+![alt tag](wiring.jpg)
 
 ## Data format of the datafile
 
