@@ -1,6 +1,7 @@
 package tech.glasgowneuro.attyseeg;
 
 import android.graphics.Color;
+import android.media.MediaScannerConnection;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
 import android.widget.ProgressBar;
@@ -129,7 +130,6 @@ public class AttysEEG extends AppCompatActivity {
     private int timestamp = 0;
 
     private String dataFilename = null;
-    private final byte dataSeparator = 0;
 
     ProgressBar progress = null;
 
@@ -166,13 +166,16 @@ public class AttysEEG extends AppCompatActivity {
                     messageListener.haveMessage(AttysComm.MESSAGE_STOPPED_RECORDING);
                 }
                 textdataFileStream = null;
-                textdataFile = null;
-                if (file != null) {
-                    Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-                    Uri contentUri = Uri.fromFile(file);
-                    mediaScanIntent.setData(contentUri);
-                    sendBroadcast(mediaScanIntent);
+                if (textdataFile != null) {
+                    MediaScannerConnection.scanFile(getBaseContext(),
+                            new String[]{textdataFile.toString()}, null,
+                            new MediaScannerConnection.OnScanCompletedListener() {
+                                public void onScanCompleted(String path, Uri uri) {
+                                    Log.d(TAG, "Scanned:" + path + " uri=" + uri.toString());
+                                }
+                            });
                 }
+                textdataFile = null;
             }
         }
 
@@ -344,9 +347,7 @@ public class AttysEEG extends AppCompatActivity {
                     if (!realtimePlotView.startAddSamples(n)) return;
                     for (int i = 0; ((i < n) && (attysComm != null)); i++) {
                         float[] sample = null;
-                        if (attysComm != null) {
-                            sample = attysComm.getSampleFromBuffer();
-                        }
+                        sample = attysComm.getSampleFromBuffer();
                         if (sample != null) {
                             // debug ECG detector
                             // sample[AttysComm.INDEX_Analogue_channel_2] = (float)ecgDetOut;
@@ -733,7 +734,7 @@ public class AttysEEG extends AppCompatActivity {
                         dataFilename = filenameEditText.getText().toString();
                         dataFilename = dataFilename.replaceAll("[^a-zA-Z0-9.-]", "_");
                         if (!dataFilename.contains(".")) {
-                            switch (dataSeparator) {
+                            switch (dataRecorder.data_separator) {
                                 case DataRecorder.DATA_SEPARATOR_COMMA:
                                     dataFilename = dataFilename + ".csv";
                                     break;
@@ -824,12 +825,10 @@ public class AttysEEG extends AppCompatActivity {
                 })
                 .show();
 
-        if (listview != null) {
-            ViewGroup.LayoutParams layoutParams = listview.getLayoutParams();
-            Screensize screensize = new Screensize(getWindowManager());
-            layoutParams.height = screensize.getHeightInPixels() / 2;
-            listview.setLayoutParams(layoutParams);
-        }
+        ViewGroup.LayoutParams layoutParams = listview.getLayoutParams();
+        Screensize screensize = new Screensize(getWindowManager());
+        layoutParams.height = screensize.getHeightInPixels() / 2;
+        listview.setLayoutParams(layoutParams);
 
     }
 
@@ -872,7 +871,6 @@ public class AttysEEG extends AppCompatActivity {
         } else {
             if (dataFilename != null) {
                 File file = new File(getBaseContext().getExternalFilesDir(null), dataFilename.trim());
-                dataRecorder.setDataSeparator(dataSeparator);
                 if (file.exists()) {
                     Toast.makeText(getApplicationContext(),
                             "File exists already. Enter a different one.",
@@ -1065,17 +1063,15 @@ public class AttysEEG extends AppCompatActivity {
 
     private synchronized void deleteFragmentWindow() {
         List<Fragment> fragments = getSupportFragmentManager().getFragments();
-        if (fragments != null) {
-            if (!(fragments.isEmpty())) {
-                for (Fragment fragment : fragments) {
-                    if (Log.isLoggable(TAG, Log.DEBUG)) {
-                        if (fragment != null) {
-                            Log.d(TAG, "Removing fragment: " + fragment.getTag());
-                        }
-                    }
+        if (!(fragments.isEmpty())) {
+            for (Fragment fragment : fragments) {
+                if (Log.isLoggable(TAG, Log.DEBUG)) {
                     if (fragment != null) {
-                        getSupportFragmentManager().beginTransaction().remove(fragment).commit();
+                        Log.d(TAG, "Removing fragment: " + fragment.getTag());
                     }
+                }
+                if (fragment != null) {
+                    getSupportFragmentManager().beginTransaction().remove(fragment).commit();
                 }
             }
         }

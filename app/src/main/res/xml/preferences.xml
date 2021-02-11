@@ -13,7 +13,7 @@
         android:entryValues="@array/textDataFileSeparatorValues"
         android:key="data_separator"
         android:summary="Separator between the values in the datafile saved to the SD card"
-        android:title="Separator (TSV, CSV or SSV)" />
+        android:title="Separator (TSV, CSV or DAT)" />
     <ListPreference
         android:defaultValue="50"
         android:entries="@array/powerlineOptions"
