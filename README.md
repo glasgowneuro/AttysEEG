@@ -15,7 +15,19 @@ EEG app for [Attys](http://www.attys.tech)
 
 ![alt tag](screenshots/beta_ratio_during_alpha_waves.png)
 
-
 ## Google play
 
 [![alt tag](google_play_en_badge_web_generic.png)](https://play.google.com/store/apps/details?id=tech.glasgowneuro.attyseeg)
+
+## Data format of the datafile
+
+One sample per line. Columns:
+
+  0. time in sec
+  1. raw EEG / V
+  2. filtered EEG / V
+  3. delta waves / V
+  4. theta waves / V
+  5. alpha waves / V
+  6. beta waves / V
+  7. gamma waves / V
