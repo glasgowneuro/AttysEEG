@@ -1,6 +1,5 @@
 package tech.glasgowneuro.attyseeg;
 
-import android.Manifest;
 import android.graphics.Color;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
@@ -11,14 +10,9 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
-import android.os.Handler;
-import android.os.Message;
 import android.preference.PreferenceManager;
-import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -52,25 +46,25 @@ import uk.me.berndporr.iirj.Butterworth;
 
 public class AttysEEG extends AppCompatActivity {
 
-    static final String ATTYS_SUBDIR = "attys";
+    private static final String ATTYS_SUBDIR = "attys";
 
-    private final int REFRESH_IN_MS = 50;
+    static private final int REFRESH_IN_MS = 50;
 
     private final float DEFAULT_GAIN = 4000;
 
     // overall filtering
-    private float allChLowpassF = 200;
-    private float allChHighpassF = 0.5F;
+    private static final float allChLowpassF = 200;
+    private static final float allChHighpassF = 0.5F;
 
     // EEG frequency bands
-    private float betaFlow = 13;
-    private float betaFhigh = 30;
-    private float alphaFlow = 8;
-    private float alphaFhigh = 13;
-    private float thetaFlow = 4;
-    private float thetaFhigh = 8;
-    private float deltaFhigh = 4;
-    private float gammaFlow = 30;
+    private static final float betaFlow = 13;
+    private static final float betaFhigh = 30;
+    private static final float alphaFlow = 8;
+    private static final float alphaFhigh = 13;
+    private static final float thetaFlow = 4;
+    private static final float thetaFhigh = 8;
+    private static final float deltaFhigh = 4;
+    private static final float gammaFlow = 30;
 
     public static final double notchBW = 2.5; // Hz
     public static final int notchOrder = 2;
@@ -156,19 +150,12 @@ public class AttysEEG extends AppCompatActivity {
         File file = null;
 
         // starts the recording
-        public java.io.FileNotFoundException startRec(File _file) {
+        public void startRec(File _file) throws java.io.FileNotFoundException {
             file = _file;
             sample = 0;
-            try {
-                textdataFileStream = new PrintWriter(file);
-                textdataFile = file;
-                messageListener.haveMessage(AttysComm.MESSAGE_STARTED_RECORDING);
-            } catch (java.io.FileNotFoundException e) {
-                textdataFileStream = null;
-                textdataFile = null;
-                return e;
-            }
-            return null;
+            textdataFileStream = new PrintWriter(file);
+            textdataFile = file;
+            messageListener.haveMessage(AttysComm.MESSAGE_STARTED_RECORDING);
         }
 
         // stops it
@@ -872,6 +859,44 @@ public class AttysEEG extends AppCompatActivity {
         menuItemBrowser.setEnabled(doit);
     }
 
+    private void toggleRec() {
+        if (dataRecorder.isRecording()) {
+            dataRecorder.stopRec();
+            setRecColour(Color.GRAY);
+            enableMenuitems(true);
+        } else {
+            if (dataFilename != null) {
+                File file = new File(getBaseContext().getExternalFilesDir(null), dataFilename.trim());
+                dataRecorder.setDataSeparator(dataSeparator);
+                if (file.exists()) {
+                    Toast.makeText(getApplicationContext(),
+                            "File exists already. Enter a different one.",
+                            Toast.LENGTH_LONG).show();
+                    enableMenuitems(true);
+                    return;
+                }
+                try {
+                    dataRecorder.startRec(file);
+                } catch (Exception e) {
+                    Toast.makeText(getApplicationContext(),
+                            "Could not save file.",
+                            Toast.LENGTH_LONG).show();
+                    Log.d(TAG, "Could not open data file: "+file.getAbsolutePath(), e);
+                    return;
+                }
+                if (dataRecorder.isRecording()) {
+                    setRecColour(Color.RED);
+                    enableMenuitems(false);
+                    Log.d(TAG, "Saving to " + file.getAbsolutePath());
+                }
+            } else {
+                enableMenuitems(true);
+                Toast.makeText(getApplicationContext(),
+                        "To record enter a filename first", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
 
@@ -883,41 +908,7 @@ public class AttysEEG extends AppCompatActivity {
                 return true;
 
             case R.id.toggleRec:
-                if (dataRecorder.isRecording()) {
-                    dataRecorder.stopRec();
-                    setRecColour(Color.GRAY);
-                    enableMenuitems(true);
-                } else {
-                    if (dataFilename != null) {
-                        File file = new File(getBaseContext().getExternalFilesDir(null), dataFilename.trim());
-                        dataRecorder.setDataSeparator(dataSeparator);
-                        if (file.exists()) {
-                            Toast.makeText(getApplicationContext(),
-                                    "File exists already. Enter a different one.",
-                                    Toast.LENGTH_LONG).show();
-                            enableMenuitems(true);
-                            return true;
-                        }
-                        java.io.FileNotFoundException e = dataRecorder.startRec(file);
-                        if (e != null) {
-                            if (Log.isLoggable(TAG, Log.DEBUG)) {
-                                Log.d(TAG, "Could not open data file: " + e.getMessage());
-                            }
-                            return true;
-                        }
-                        if (dataRecorder.isRecording()) {
-                            setRecColour(Color.RED);
-                            enableMenuitems(false);
-                            if (Log.isLoggable(TAG, Log.DEBUG)) {
-                                Log.d(TAG, "Saving to " + file.getAbsolutePath());
-                            }
-                        }
-                    } else {
-                        enableMenuitems(true);
-                        Toast.makeText(getApplicationContext(),
-                                "To record enter a filename first", Toast.LENGTH_SHORT).show();
-                    }
-                }
+                toggleRec();
                 return true;
 
             case R.id.Ch1gain200:
