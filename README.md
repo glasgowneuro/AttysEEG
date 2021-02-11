@@ -31,3 +31,9 @@ One sample per line. Columns:
   5. alpha waves / V
   6. beta waves / V
   7. gamma waves / V
+
+## EEG viewer
+
+Click on the screenshot below and drop an AttysEEG file on the page.
+
+[![alt tag](viewer.png)](https://glasgowneuro.github.io/AttysEEG/)
