@@ -19,6 +19,12 @@ EEG app for [Attys](http://www.attys.tech)
 
 [![alt tag](google_play_en_badge_web_generic.png)](https://play.google.com/store/apps/details?id=tech.glasgowneuro.attyseeg)
 
+## Wiring
+
+Only the 1st channel is used: +, - and GND of the Attys.
+
+[alt tag](wiring.jpg)
+
 ## Data format of the datafile
 
 One sample per line. Columns:
