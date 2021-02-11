@@ -13,6 +13,8 @@ import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+
+import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -798,18 +800,23 @@ public class AttysEEG extends AppCompatActivity {
                         Intent sendIntent = new Intent();
                         sendIntent.setAction(Intent.ACTION_SEND_MULTIPLE);
                         ArrayList<Uri> files = new ArrayList<>();
-                        for (int i = 0; i < listview.getCount(); i++) {
-                            if (checked.get(i)) {
-                                String filename = list[i];
-                                File fp = new File(getBaseContext().getExternalFilesDir(null), filename);
-                                files.add(Uri.fromFile(fp));
-                                if (Log.isLoggable(TAG, Log.DEBUG)) {
-                                    Log.d(TAG, "share data, filename=" + filename);
+                        if (null != list) {
+                            for (int i = 0; i < listview.getCount(); i++) {
+                                if (checked.get(i)) {
+                                    String filename = list[i];
+                                    File fp = new File(getBaseContext().getExternalFilesDir(null), filename);
+                                    final Uri u = FileProvider.getUriForFile(
+                                            getBaseContext(),
+                                            getApplicationContext().getPackageName() + ".fileprovider",
+                                            fp);
+                                    files.add(u);
+                                    Log.d(TAG, "filename=" + filename);
                                 }
                             }
                         }
                         sendIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, files);
                         sendIntent.setType("text/*");
+                        sendIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                         startActivity(Intent.createChooser(sendIntent, "Send your files"));
                     }
                 })
