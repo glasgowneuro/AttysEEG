@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Bundle;
 import androidx.core.app.ActivityCompat;
@@ -250,7 +251,7 @@ public class FastSlowRatioFragment extends Fragment {
         fastSlowPlot.setDomainLabel("t/sec");
         fastSlowPlot.setRangeLabel("");
 
-        Screensize screensize = new Screensize(getActivity().getWindowManager());
+        Screensize screensize = new Screensize(requireContext());
 
         if (screensize.isTablet()) {
             fastSlowPlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 10);
@@ -310,10 +311,13 @@ public class FastSlowRatioFragment extends Fragment {
 
         aepdataFileStream.close();
 
-        Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-        Uri contentUri = Uri.fromFile(file);
-        mediaScanIntent.setData(contentUri);
-        getActivity().sendBroadcast(mediaScanIntent);
+        MediaScannerConnection.scanFile(requireContext(),
+                new String[]{file.toString()}, null,
+                new MediaScannerConnection.OnScanCompletedListener() {
+                    public void onScanCompleted(String path, Uri uri) {
+                        Log.d(TAG, "Scanned:" + path + " uri=" + uri.toString());
+                    }
+                });
     }
 
 

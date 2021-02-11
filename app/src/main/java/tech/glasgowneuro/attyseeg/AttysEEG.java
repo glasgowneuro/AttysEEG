@@ -13,7 +13,7 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
@@ -825,7 +825,7 @@ public class AttysEEG extends AppCompatActivity {
                 .show();
 
         ViewGroup.LayoutParams layoutParams = listview.getLayoutParams();
-        Screensize screensize = new Screensize(getWindowManager());
+        Screensize screensize = new Screensize(getBaseContext());
         layoutParams.height = screensize.getHeightInPixels() / 2;
         listview.setLayoutParams(layoutParams);
 
@@ -1038,7 +1038,7 @@ public class AttysEEG extends AppCompatActivity {
 
     private void showPlotFragment() {
 
-        Screensize screensize = new Screensize(getWindowManager());
+        Screensize screensize = new Screensize(getBaseContext());
 
         FrameLayout frameLayout = findViewById(R.id.mainplotlayout);
         frameLayout.setLayoutParams(new LinearLayout.LayoutParams(

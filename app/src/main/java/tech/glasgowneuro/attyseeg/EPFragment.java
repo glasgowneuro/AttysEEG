@@ -9,6 +9,7 @@ import android.graphics.Paint;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Bundle;
 import androidx.core.app.ActivityCompat;
@@ -403,7 +404,7 @@ public class EPFragment extends Fragment {
         showSweeps();
         nSweeps++;
 
-        Screensize screensize = new Screensize(getActivity().getWindowManager());
+        Screensize screensize = new Screensize(requireContext());
         if (screensize.isTablet()) {
             epPlot.setDomainStep(StepMode.INCREMENT_BY_VAL, 50);
         } else {
@@ -606,11 +607,14 @@ public class EPFragment extends Fragment {
         }
 
         aepdataFileStream.close();
+        MediaScannerConnection.scanFile(requireContext(),
+                new String[]{file.toString()}, null,
+                new MediaScannerConnection.OnScanCompletedListener() {
+                    public void onScanCompleted(String path, Uri uri) {
+                        Log.d(TAG, "Scanned:" + path + " uri=" + uri.toString());
+                    }
+                });
 
-        Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-        Uri contentUri = Uri.fromFile(file);
-        mediaScanIntent.setData(contentUri);
-        getActivity().sendBroadcast(mediaScanIntent);
     }
 
 
