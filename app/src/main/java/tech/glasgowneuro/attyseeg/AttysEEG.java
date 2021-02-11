@@ -790,8 +790,8 @@ public class AttysEEG extends AppCompatActivity {
         });
 
         new AlertDialog.Builder(this)
-                .setTitle("Share")
-                .setMessage("Select filename(s)")
+                .setTitle("Share files")
+                .setMessage("Folder:\n"+getBaseContext().getExternalFilesDir(null).toString())
                 .setView(listview)
                 .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
@@ -799,20 +799,19 @@ public class AttysEEG extends AppCompatActivity {
                         Intent sendIntent = new Intent();
                         sendIntent.setAction(Intent.ACTION_SEND_MULTIPLE);
                         ArrayList<Uri> files = new ArrayList<>();
-                        if (null != list) {
-                            for (int i = 0; i < listview.getCount(); i++) {
-                                if (checked.get(i)) {
-                                    String filename = list[i];
-                                    File fp = new File(getBaseContext().getExternalFilesDir(null), filename);
-                                    final Uri u = FileProvider.getUriForFile(
-                                            getBaseContext(),
-                                            getApplicationContext().getPackageName() + ".fileprovider",
-                                            fp);
-                                    files.add(u);
-                                    Log.d(TAG, "filename=" + filename);
-                                }
+                        for (int i = 0; i < listview.getCount(); i++) {
+                            if (checked.get(i)) {
+                                String filename = list[i];
+                                File fp = new File(getBaseContext().getExternalFilesDir(null), filename);
+                                final Uri u = FileProvider.getUriForFile(
+                                        getBaseContext(),
+                                        getApplicationContext().getPackageName() + ".fileprovider",
+                                        fp);
+                                files.add(u);
+                                Log.d(TAG, "filename=" + filename);
                             }
                         }
+                        if (files.isEmpty()) return;
                         sendIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, files);
                         sendIntent.setType("text/*");
                         sendIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
