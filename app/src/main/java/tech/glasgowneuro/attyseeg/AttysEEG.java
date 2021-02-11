@@ -48,8 +48,6 @@ import uk.me.berndporr.iirj.Butterworth;
 
 public class AttysEEG extends AppCompatActivity {
 
-    private static final String ATTYS_SUBDIR = "attys";
-
     static private final int REFRESH_IN_MS = 50;
 
     private final float DEFAULT_GAIN = 4000;
