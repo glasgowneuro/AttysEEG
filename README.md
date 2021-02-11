@@ -37,3 +37,5 @@ One sample per line. Columns:
 Click on the screenshot below and drop an AttysEEG file on the page.
 
 [![alt tag](viewer.png)](https://glasgowneuro.github.io/AttysEEG/)
+
+The source files of the EEG viewer are in the `/docs` folder.
