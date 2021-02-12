@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -170,7 +171,6 @@ public class EPFragment extends Fragment {
 
         // audio
         static private AudioTrack sound;
-        private byte[] rawAudio;
         public static final int audioSamplingRate = 44100;
         public static final int clickduration = audioSamplingRate / 1000; // 1ms
         public static final int nAudioSamples = clickduration * 3;
@@ -180,15 +180,23 @@ public class EPFragment extends Fragment {
                         (SWEEP_DURATION_US_WITHOUT_CORRECTION[1]-20000) / 1.0E6);
 
         public AudioStimulusGenerator(byte[] _customStimulus) {
+            AudioFormat audioFormat = new AudioFormat.Builder()
+                    .setEncoding(AudioFormat.ENCODING_PCM_8BIT)
+                    .setSampleRate(audioSamplingRate)
+                    .setChannelMask(AudioFormat.CHANNEL_IN_MONO)
+                    .build();
+            AudioAttributes audioAttributes = new AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setUsage(AudioAttributes.USAGE_NOTIFICATION_COMMUNICATION_INSTANT)
+                    .build();
             if (_customStimulus == null) {
-                sound = new AudioTrack(AudioManager.STREAM_MUSIC,
-                        audioSamplingRate,
-                        AudioFormat.CHANNEL_OUT_MONO,
-                        AudioFormat.ENCODING_PCM_8BIT,
+                sound = new AudioTrack (audioAttributes,
+                        audioFormat,
                         nAudioSamples,
-                        AudioTrack.MODE_STATIC);
+                        AudioTrack.MODE_STATIC,
+                        AttysEEG.audioSessionID);
                 if (sound == null) return;
-                rawAudio = new byte[nAudioSamples];
+                byte[] rawAudio = new byte[nAudioSamples];
                 for (int i = 0; i < nAudioSamples; i++) {
                     rawAudio[i] = (byte) 0x80;
                 }
@@ -198,12 +206,11 @@ public class EPFragment extends Fragment {
                 }
                 sound.write(rawAudio, 0, rawAudio.length);
             } else {
-                sound = new AudioTrack(AudioManager.STREAM_MUSIC,
-                        audioSamplingRate,
-                        AudioFormat.CHANNEL_OUT_MONO,
-                        AudioFormat.ENCODING_PCM_8BIT,
-                        _customStimulus.length,
-                        AudioTrack.MODE_STATIC);
+                sound = new AudioTrack (audioAttributes,
+                        audioFormat,
+                        nAudioSamples,
+                        AudioTrack.MODE_STATIC,
+                        AttysEEG.audioSessionID);
                 if (sound == null) return;
                 sound.write(_customStimulus, 0, _customStimulus.length);
 //                for(byte sample : _customStimulus) {
@@ -218,7 +225,7 @@ public class EPFragment extends Fragment {
                 sound.flush();
                 sound.reloadStaticData();
                 sound.play();
-            } catch (IllegalStateException e) {
+            } catch (IllegalStateException ignored) {
             }
         }
 

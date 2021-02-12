@@ -1,6 +1,8 @@
 package tech.glasgowneuro.attyseeg;
 
+import android.content.Context;
 import android.graphics.Color;
+import android.media.AudioManager;
 import android.media.MediaScannerConnection;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
@@ -134,6 +136,8 @@ public class AttysEEG extends AppCompatActivity {
     ProgressBar progress = null;
 
     AlertDialog alertDialog = null;
+
+    public static int audioSessionID;
 
     public class DataRecorder {
         /////////////////////////////////////////////////////////////
@@ -486,6 +490,9 @@ public class AttysEEG extends AppCompatActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        AudioManager audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+        audioSessionID = audioManager.generateAudioSessionId();
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
