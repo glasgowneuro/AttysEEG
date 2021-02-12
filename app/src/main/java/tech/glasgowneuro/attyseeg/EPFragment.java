@@ -172,8 +172,9 @@ public class EPFragment extends Fragment {
         // audio
         static private AudioTrack sound;
         public static final int audioSamplingRate = 44100;
+        int nAudioSamples = AudioTrack.getMinBufferSize(audioSamplingRate,
+                AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_8BIT);
         public static final int clickduration = audioSamplingRate / 1000; // 1ms
-        public static final int nAudioSamples = clickduration * 3;
         // let's assume the worse case: 20ms latency to trigger the sound
         public static final int maxNAudioSamples =
                 (int) ((double) audioSamplingRate *
@@ -188,22 +189,23 @@ public class EPFragment extends Fragment {
                     .setChannelMask(frontPair)
                     .build();
             AudioAttributes audioAttributes = new AudioAttributes.Builder()
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .setUsage(AudioAttributes.USAGE_NOTIFICATION_COMMUNICATION_INSTANT)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
                     .build();
             if (_customStimulus == null) {
+                if (clickduration > nAudioSamples) nAudioSamples = clickduration;
                 sound = new AudioTrack (audioAttributes,
                         audioFormat,
                         nAudioSamples,
                         AudioTrack.MODE_STATIC,
                         AttysEEG.audioSessionID);
-                if (sound == null) return;
                 byte[] rawAudio = new byte[nAudioSamples];
                 for (int i = 0; i < nAudioSamples; i++) {
                     rawAudio[i] = (byte) 0x80;
                 }
                 for (int i = 0; i < clickduration; i++) {
-                    rawAudio[i] = (byte) 0x00;
+                    double v = Math.sin(i/(double)clickduration*Math.PI*2);
+                    rawAudio[i] = (byte) ((0x80 + (int)(v * 127))&0xff);
                     rawAudio[i + clickduration] = (byte) 0xff;
                 }
                 sound.write(rawAudio, 0, rawAudio.length);
@@ -213,7 +215,6 @@ public class EPFragment extends Fragment {
                         nAudioSamples,
                         AudioTrack.MODE_STATIC,
                         AttysEEG.audioSessionID);
-                if (sound == null) return;
                 sound.write(_customStimulus, 0, _customStimulus.length);
 //                for(byte sample : _customStimulus) {
 //                    Log.d(TAG," "+(sample & 0xff));

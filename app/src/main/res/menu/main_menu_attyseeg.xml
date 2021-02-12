@@ -8,28 +8,28 @@
         app:showAsAction="always" />
 
     <item
-        android:title="DISPLAY"
+        android:title="ANALYSIS"
         app:showAsAction="ifRoom">
-
         <menu>
+            <item
+                android:id="@+id/plotWindowOff"
+                android:title="OFF" />
+            <item
+                android:id="@+id/plotWindowEP"
+                android:title="Evoked potentials" />
+            <item
+                android:id="@+id/plotWindowFastSlow"
+                android:title="EEG power fast/slow" />
+            <item
+                android:id="@+id/plotWindowBarGraph"
+                android:title="EEG amplitudes" />
+        </menu>
+    </item>
 
-            <item android:title="advanced Analysis">
-                <menu>
-                    <item
-                        android:id="@+id/plotWindowOff"
-                        android:title="OFF" />
-                    <item
-                        android:id="@+id/plotWindowEP"
-                        android:title="Evoked potentials" />
-                    <item
-                        android:id="@+id/plotWindowFastSlow"
-                        android:title="EEG power fast/slow" />
-                    <item
-                        android:id="@+id/plotWindowBarGraph"
-                        android:title="EEG amplitudes" />
-                </menu>
-            </item>
-
+    <item
+        android:title="DISPLAY"
+                app:showAsAction="ifRoom">
+        <menu>
             <group android:checkableBehavior="all">
                 <item
                     android:id="@+id/showBeta"
