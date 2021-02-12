@@ -180,10 +180,12 @@ public class EPFragment extends Fragment {
                         (SWEEP_DURATION_US_WITHOUT_CORRECTION[1]-20000) / 1.0E6);
 
         public AudioStimulusGenerator(byte[] _customStimulus) {
+            final int frontPair =
+                    AudioFormat.CHANNEL_OUT_FRONT_LEFT | AudioFormat.CHANNEL_OUT_FRONT_RIGHT;
             AudioFormat audioFormat = new AudioFormat.Builder()
                     .setEncoding(AudioFormat.ENCODING_PCM_8BIT)
                     .setSampleRate(audioSamplingRate)
-                    .setChannelMask(AudioFormat.CHANNEL_IN_MONO)
+                    .setChannelMask(frontPair)
                     .build();
             AudioAttributes audioAttributes = new AudioAttributes.Builder()
                     .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
