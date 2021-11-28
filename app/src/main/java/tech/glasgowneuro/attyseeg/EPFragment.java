@@ -46,6 +46,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -320,7 +322,7 @@ public class EPFragment extends Fragment {
             showSweeps();
             index = 0;
             if (audioStimulusGenerator != null) {
-                audioStimulusGenerator.stim();
+                AudioStimulusGenerator.stim();
             }
             if (visualStimulusGenerator != null) {
                 visualStimulusGenerator.stim();
@@ -501,11 +503,6 @@ public class EPFragment extends Fragment {
         spinnerMode.setBackgroundResource(android.R.drawable.btn_default);
 
         epHistorySeries = new SimpleXYSeries(" ");
-        if (epHistorySeries == null) {
-            if (Log.isLoggable(TAG, Log.ERROR)) {
-                Log.e(TAG, "epHistorySeries == null");
-            }
-        }
 
         epPlot.addSeries(epHistorySeries,
                 new LineAndPointFormatter(
@@ -674,11 +671,11 @@ public class EPFragment extends Fragment {
                 Manifest.permission.READ_EXTERNAL_STORAGE
         };
 
-        int permission = ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.READ_EXTERNAL_STORAGE);
+        int permission = ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE);
 
         if (permission != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(
-                    getActivity(),
+                    requireActivity(),
                     PERMISSIONS_STORAGE,
                     REQUEST_EXTERNAL_STORAGE
             );
@@ -753,11 +750,13 @@ public class EPFragment extends Fragment {
                 Manifest.permission.WRITE_EXTERNAL_STORAGE
         };
 
-        int permission = ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        int permission = ActivityCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.WRITE_EXTERNAL_STORAGE);
 
         if (permission != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(
-                    getActivity(),
+                    requireActivity(),
                     PERMISSIONS_STORAGE,
                     REQUEST_EXTERNAL_STORAGE
             );
@@ -815,7 +814,7 @@ public class EPFragment extends Fragment {
                 @Override
                 public void run() {
                     if (sweepNoText != null) {
-                        sweepNoText.setText(String.format("%04d sweeps", nSweeps));
+                        sweepNoText.setText(String.format(Locale.US,"%04d sweeps", nSweeps));
                     }
                 }
             });
@@ -823,13 +822,15 @@ public class EPFragment extends Fragment {
     }
 
     // adds samples
-    public void addValue(float v) {
+    public void addValue(final float v) {
 
         if (!ready) return;
 
-        double v2 = highpass.filter(v * 1E6);
-        v2 = notch_mains_fundamental.filter(v2);
-        v2 = notch_mains_1st_harmonic.filter(v2);
+        final double v2 = notch_mains_1st_harmonic.filter(
+                notch_mains_fundamental.filter(
+                        highpass.filter(v * 1E6)
+                )
+        );
 
         if (!acceptData) return;
 
@@ -844,7 +845,6 @@ public class EPFragment extends Fragment {
             double avg = epHistorySeries.getY(index).doubleValue();
             double nSweepsD = (double) nSweeps;
             avg = ((nSweepsD - 1) / nSweepsD) * avg + (1 / nSweepsD) * v2;
-            //avg = v2;
             epHistorySeries.setY(avg, index);
             index++;
         }
