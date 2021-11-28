@@ -108,6 +108,9 @@ public class EPFragment extends Fragment {
     // the actual graph
     private SimpleXYSeries epHistorySeries = null;
 
+    // the sum of the values
+    private double[] epSum = null;
+
     // the checkerboards hosted by the main UI
     static private StimulusView stimulusView1 = null;
     static private StimulusView stimulusView2 = null;
@@ -348,15 +351,12 @@ public class EPFragment extends Fragment {
     }
 
     private void setStimInvisible() {
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (stimulusView1 != null) {
-                    stimulusView1.setVisibility(View.INVISIBLE);
-                }
-                if (stimulusView2 != null) {
-                    stimulusView2.setVisibility(View.INVISIBLE);
-                }
+        requireActivity().runOnUiThread(() -> {
+            if (stimulusView1 != null) {
+                stimulusView1.setVisibility(View.INVISIBLE);
+            }
+            if (stimulusView2 != null) {
+                stimulusView2.setVisibility(View.INVISIBLE);
             }
         });
     }
@@ -410,6 +410,8 @@ public class EPFragment extends Fragment {
         for (int i = 0; i < nSamples; i++) {
             epHistorySeries.addLast(1000.0F * (float) i * (1.0F / ((float) samplingRate)), 0.0);
         }
+
+        epSum = new double[nSamples];
 
         index = 0;
         nSweeps = 0;
@@ -480,7 +482,7 @@ public class EPFragment extends Fragment {
         });
 
         spinnerMode = (Spinner) view.findViewById(R.id.ep_mode);
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(),
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(),
                 android.R.layout.simple_spinner_dropdown_item,
                 string_ep_modes);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -642,24 +644,16 @@ public class EPFragment extends Fragment {
                 customAudioStimulus[n] = (byte) 0x80;
                 n++;
             }
-            getActivity().runOnUiThread(new Runnable() {
-                public void run() {
-                    Toast.makeText(getActivity(),
-                            "Successfully loaded '" + filename + "'",
-                            Toast.LENGTH_SHORT).show();
-                }
-            });
+            requireActivity().runOnUiThread(() -> Toast.makeText(getActivity(),
+                    "Successfully loaded '" + filename + "'",
+                    Toast.LENGTH_SHORT).show());
         } catch (final Exception e) {
             if (Log.isLoggable(TAG, Log.DEBUG)) {
                 Log.d(TAG, filename + " loading error", e);
             }
-            getActivity().runOnUiThread(new Runnable() {
-                public void run() {
-                    Toast.makeText(getActivity(),
-                            "Error loading '" + filename + "': " + e.getMessage(),
-                            Toast.LENGTH_SHORT).show();
-                }
-            });
+            requireActivity().runOnUiThread(() -> Toast.makeText(getActivity(),
+                    "Error loading '" + filename + "': " + e.getMessage(),
+                    Toast.LENGTH_SHORT).show());
         }
     }
 
@@ -692,7 +686,7 @@ public class EPFragment extends Fragment {
         }
 
         final ListView listview = new ListView(getContext());
-        ArrayAdapter adapter = new ArrayAdapter(getContext(),
+        ArrayAdapter adapter = new ArrayAdapter(requireContext(),
                 android.R.layout.simple_list_item_multiple_choice,
                 files);
         listview.setAdapter(adapter);
@@ -705,7 +699,7 @@ public class EPFragment extends Fragment {
             }
         });
 
-        new AlertDialog.Builder(getContext())
+        new AlertDialog.Builder(requireContext())
                 .setTitle("Loading custom stimulus for AEP")
                 .setMessage("Select a filename. " +
                         "It needs to have one sample per row and less or qual than n=" +
@@ -765,7 +759,7 @@ public class EPFragment extends Fragment {
         filenameEditText.setHint("");
         filenameEditText.setText(dataFilename);
 
-        new AlertDialog.Builder(getContext())
+        new AlertDialog.Builder(requireContext())
                 .setTitle("Saving AEP data")
                 .setMessage("Enter the filename of the data textfile")
                 .setView(filenameEditText)
@@ -822,7 +816,7 @@ public class EPFragment extends Fragment {
     }
 
     // adds samples
-    public void addValue(final float v) {
+    public void hasSample(final float v) {
 
         if (!ready) return;
 
@@ -841,10 +835,9 @@ public class EPFragment extends Fragment {
             return;
         }
 
-        if (index < epHistorySeries.size()) {
-            double avg = epHistorySeries.getY(index).doubleValue();
-            double nSweepsD = (double) nSweeps;
-            avg = ((nSweepsD - 1) / nSweepsD) * avg + (1 / nSweepsD) * v2;
+        if (index < nSamples) {
+            epSum[index] += v2;
+            final double avg = epSum[index] / nSweeps;
             epHistorySeries.setY(avg, index);
             index++;
         }
