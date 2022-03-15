@@ -1,9 +1,12 @@
 package tech.glasgowneuro.attyseeg;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.media.AudioManager;
 import android.media.MediaScannerConnection;
+import android.os.Build;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
 import android.widget.ProgressBar;
@@ -15,6 +18,11 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.Bundle;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.RequiresApi;
+import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
 
 import androidx.core.content.FileProvider;
@@ -484,7 +492,45 @@ public class AttysEEG extends AppCompatActivity {
     }
 
 
-    /**
+    private final ActivityResultLauncher<String[]> requestPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), isGranted -> {
+                // isGranted is a map of the permissions (Strings) to boolean values.
+                if (isGranted.containsValue(false)) {
+                    finish();
+                }
+                if (AttysComm.findAttysBtDevice() == null) {
+                    noAttysFoundAlert();
+                }
+            });
+
+
+    @RequiresApi(api = Build.VERSION_CODES.S)
+    private void requestPermissionsAndroid12() {
+        final String[] ANDROID_12_PERMISSIONS = new String[]{
+                Manifest.permission.BLUETOOTH_SCAN,
+                Manifest.permission.BLUETOOTH_CONNECT
+        };
+        for(String p:ANDROID_12_PERMISSIONS) {
+            if (!(ContextCompat.checkSelfPermission(getBaseContext(), p) ==
+                    PackageManager.PERMISSION_GRANTED)) {
+                requestPermissionLauncher.launch(ANDROID_12_PERMISSIONS);
+                return;
+            }
+        }
+    }
+
+
+    private void requestBTpermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            requestPermissionsAndroid12();
+        } else {
+            if (AttysComm.findAttysBtDevice() == null) {
+                noAttysFoundAlert();
+            }
+        }
+    }
+
+     /**
      * Called when the activity is first created.
      */
     @Override
@@ -504,6 +550,8 @@ public class AttysEEG extends AppCompatActivity {
         setSupportActionBar(myToolbar);
 
         progress = findViewById(R.id.indeterminateBar);
+
+        requestBTpermissions();
 
         highpass = new Butterworth();
         betaHighpass = new Butterworth();
