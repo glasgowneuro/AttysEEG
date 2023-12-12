@@ -1,4 +1,4 @@
 # AttysEEG
 
-No longer maintained
+Android app for displaying EEG with the Attys
 
