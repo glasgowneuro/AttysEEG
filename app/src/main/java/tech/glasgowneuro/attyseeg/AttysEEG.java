@@ -183,7 +183,11 @@ public class AttysEEG extends AppCompatActivity {
                             new String[]{textdataFile.toString()}, null,
                             new MediaScannerConnection.OnScanCompletedListener() {
                                 public void onScanCompleted(String path, Uri uri) {
-                                    Log.d(TAG, "Scanned:" + path + " uri=" + uri.toString());
+                                    if (null != uri) {
+                                        Log.d(TAG, "Scanned:" + path + " uri=" + uri.toString());
+                                    } else {
+                                        Log.d(TAG, "Scanned:" + path);
+                                    }
                                 }
                             });
                 }
