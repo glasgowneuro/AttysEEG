@@ -1,5 +1,5 @@
 # AttysEEG
 
-Android app for displaying EEG with the Attys
+Note that this app is no longer maintained.
 
 ![alt tag](electrodes.jpeg)
